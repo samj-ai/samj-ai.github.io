@@ -30,8 +30,9 @@ twitter_username: samlikesphysics
 github_username: samj-ai
 
 # Build settings
-theme: just-the-docs
+remote_theme: just-the-docs/just-the-docs
 plugins:
+  - jekyll-remote-theme
   - jekyll-feed
 
 # Enable MathJax
