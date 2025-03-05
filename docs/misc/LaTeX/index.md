@@ -1,107 +1,70 @@
 ---
 layout: default
-title: LaTeX Notes
-nav_order: 1
-has_children: true
+title: Gallery of Light and Shade
 ---
 
-# Category Theory Diagram Guide
+# Gallery of Light and Shade
 
-## Simple Diagrams (using CD)
-Best for basic commutative diagrams, renders quickly and works in VS Code preview.
+What can you do with shaders? All this and more...!
 
-### Basic Morphism
-$$
-\begin{CD}
-A @>f>> B
-\end{CD}
-$$
+<div class="shader-grid">
+  <!-- Individual shader entries will go here -->
+  <div class="shader-item">
+    <h2>My First Shader</h2>
+    <div id="shader1" class="glsl-editor"></div>
+    <p>Description of this amazing shader</p>
+  </div>
+  
+  <!-- More shader items -->
+</div>
 
-### Composition
-$$
-\begin{CD}
-A @>f>> B @>g>> C
-\end{CD}
-$$
+<script>
+  // Initialize the shader editors after the page loads
+  document.addEventListener('DOMContentLoaded', function() {
+    const shader1 = new GlslEditor('#shader1', {
+      canvas_size: 300,
+      canvas_draggable: true,
+      theme: 'monokai',
+      multipleBuffers: false,
+      menu: false
+    });
+    
+    // Set the initial shader code
+    shader1.setContent(`
+      #ifdef GL_ES
+      precision mediump float;
+      #endif
 
-### Square Diagram
-$$
-\begin{CD}
-A @>f>> B \\
-@VgVV @VhVV \\
-C @>k>> D
-\end{CD}
-$$
+      uniform vec2 u_resolution;
+      uniform float u_time;
 
-### Simple Parallel Arrows
-$$
-\begin{CD}
-A @>f>> B \\
-A @>>g> B
-\end{CD}
-$$
-
-## Complex Diagrams (using tikz-cd)
-For diagrams needing dashed arrows, diagonal arrows, or special formatting.
-
-### Universal Mapping Property
-<script type="text/tikz">
-\begin{tikzcd}
-  & X \arrow[dr, "h", dashed] & \\
-  A \arrow[ur, "f"] \arrow[rr, "g"'] && Y
-\end{tikzcd}
+      void main() {
+        vec2 st = gl_FragCoord.xy/u_resolution.xy;
+        st.x *= u_resolution.x/u_resolution.y;
+        
+        vec3 color = vec3(0.0);
+        color = vec3(st.x, st.y, abs(sin(u_time)));
+        
+        gl_FragColor = vec4(color, 1.0);
+      }
+    `);
+    
+    // Initialize more shaders here
+  });
 </script>
 
-### Pullback Square
-<script type="text/tikz">
-\begin{tikzcd}
-P \arrow[r, "p_1"] \arrow[d, "p_2"'] & A \arrow[d, "f"] \\
-B \arrow[r, "g"'] & C
-\end{tikzcd}
-</script>
-
-### Parallel Arrows with Shift
-<script type="text/tikz">
-\begin{tikzcd}
-A \arrow[r, "f", shift left=0.75ex] 
-  \arrow[r, "g"', shift right=0.75ex] & B
-\end{tikzcd}
-</script>
-
-### Triple Parallel Arrows
-<script type="text/tikz">
-\begin{tikzcd}
-A \arrow[r, "f", shift left=1.5ex] 
-  \arrow[r, "g"] 
-  \arrow[r, "h"', shift right=1.5ex] & B
-\end{tikzcd}
-</script>
-
-### Curved and Looped Arrows
-<script type="text/tikz">
-\begin{tikzcd}
-A \arrow[r, "f"] \arrow[loop above, "α"] & B
-\end{tikzcd}
-</script>
-
-## When to Use Each
-
-Use CD environment (`\begin{CD}`) when:
-- Drawing simple morphisms
-- Creating basic commutative squares
-- Need fast rendering and VS Code preview
-- Diagrams only use horizontal and vertical arrows
-
-Use tikz-cd (with `<script type="text/tikz">`) when:
-- Need dashed or dotted arrows
-- Want diagonal arrows
-- Creating complex layouts
-- Need to adjust arrow positioning
-- Drawing loops or curved arrows
-- Making parallel arrows with proper spacing
-
-## Tips
-1. For basic diagrams, start with CD syntax - it's lighter and renders faster
-2. Switch to tikz-cd when you need more complex features
-3. Remember tikz-cd diagrams won't show in VS Code preview - use local server to check them
-4. The slight rendering delay for tikz diagrams is normal
+<style>
+  .shader-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 2rem;
+    margin: 2rem 0;
+  }
+  
+  .shader-item {
+    padding: 1rem;
+    border-radius: 8px;
+    background: #f5f5f5;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+  }
+</style>
