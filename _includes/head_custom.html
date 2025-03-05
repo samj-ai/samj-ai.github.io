@@ -1,19 +1,26 @@
+<script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+<link rel="stylesheet" type="text/css" href="https://tikzjax.com/v1/fonts.css">
+<script src="https://tikzjax.com/v1/tikzjax.js"></script>
 <script type="text/javascript">
   window.MathJax = {
     tex: {
-      packages: ['base', 'ams', 'autoload', 'amscd', 'tikz'],
+      packages: ['base', 'ams', 'autoload', 'amscd', 'amstex', 'color'],
       inlineMath: [['$', '$'], ['\\(', '\\)']],
       displayMath: [['$$', '$$'], ['\\[', '\\]']],
       macros: {
         Set: ['\\{#1\\}', 1],
         C: '\\mathcal{C}'
-      }
+      },
+      tags: 'ams'
     },
     loader: {
-      load: ['[tex]/tikz']
+      load: ['[tex]/amscd']
     },
     svg: {
       fontCache: 'global'
     }
   };
+</script>
+<script type="text/javascript" id="MathJax-script" async
+  src="https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-svg.js">
 </script>
