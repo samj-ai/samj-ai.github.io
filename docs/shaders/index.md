@@ -1,8 +1,8 @@
 ---
 layout: default
 title: Gallery of Light and Shade
-nav_order: 3
-has_children: true
+nav_order: 1
+has_children: false
 ---
 
 # Gallery of Light and Shade
