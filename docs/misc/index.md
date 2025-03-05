@@ -1,9 +1,9 @@
 ---
 layout: default
-title: Miscellaneous Notes (Largely Coding Languages / Syntax)
+title: Misc
 nav_order: 3
 has_children: true
 ---
 
-# Miscellaneous Notes
+# Miscellaneous
 

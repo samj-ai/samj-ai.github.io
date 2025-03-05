@@ -1,6 +1,6 @@
 ---
 layout: default
-title: Misc
+title: LaTeX Notes
 ---
 
 # Notes on LaTeX
