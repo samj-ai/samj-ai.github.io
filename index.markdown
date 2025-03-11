@@ -4,3 +4,5 @@
 
 layout: home
 ---
+
+I'm Sam. Here are some notes. ^_^
