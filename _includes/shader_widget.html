@@ -1,198 +1,164 @@
 <!-- _includes/shader_widget.html -->
 
 <div class="shader-widget">
-    <canvas class="shader-canvas"></canvas>
-    
-    <!-- We'll read the passed-in code from include.shader_code -->
-    <textarea class="shader-editor">{% raw %}
-  {{ include.shader_code | default: "
-  #ifdef GL_ES
-  precision mediump float;
-  #endif
-  void main() {
-    gl_FragColor = vec4(1.0);
+  <canvas class="shader-canvas"></canvas>
+  
+  <!-- We'll read the passed-in code from include.shader_code -->
+  <textarea class="shader-editor">{% raw %}
+{{ include.shader_code | default: "
+#ifdef GL_ES
+precision mediump float;
+#endif
+void main() {
+  gl_FragColor = vec4(1.0);
+}
+" }}
+{% endraw %}</textarea>
+
+  <button class="toggle-button">Toggle Editor</button>
+</div>
+
+<script>
+(function() {
+  const widget = document.currentScript.closest('.shader-widget');
+  const canvas = widget.querySelector('.shader-canvas');
+  const editor = widget.querySelector('.shader-editor');
+  const toggleBtn = widget.querySelector('.toggle-button');
+
+  let gl = canvas.getContext('webgl');
+  if (!gl) {
+    console.error('WebGL not supported');
+    return;
   }
-  " }}
-  {% endraw %}</textarea>
-  
-    <button class="toggle-button">Toggle Editor</button>
-  </div>
-  
-  <script>
-  (function() {
-    const widget = document.currentScript.closest('.shader-widget');
-    const canvas = widget.querySelector('.shader-canvas');
-    const editor = widget.querySelector('.shader-editor');
-    const toggleBtn = widget.querySelector('.toggle-button');
-  
-    let gl = canvas.getContext('webgl');
-    if (!gl) {
-      console.error('WebGL not supported');
-      return;
+
+  // Basic vertex shader
+  const vertexSrc = `
+    attribute vec2 a_position;
+    void main() {
+      gl_Position = vec4(a_position, 0.0, 1.0);
     }
-  
-    // Basic vertex shader
-    const vertexSrc = `
-      attribute vec2 a_position;
-      void main() {
-        gl_Position = vec4(a_position, 0.0, 1.0);
-      }
-    `;
-  
-    // We'll read the fragment shader from the textarea
-    let fragmentSrc = editor.value;
-  
-    // Full-screen quad
-    let buffer = gl.createBuffer();
-    gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
-    let vertices = new Float32Array([
-      -1, -1,   1, -1,  -1,  1,
-      -1,  1,   1, -1,   1,  1
-    ]);
-    gl.bufferData(gl.ARRAY_BUFFER, vertices, gl.STATIC_DRAW);
-  
-    let timeUniformLocation = null;
-    let program = null;
-    let startTime = performance.now();
-  
-    // Helper to compile a program from vertex + fragment
-    function createShaderProgram(vsSrc, fsSrc) {
-      function compileShader(type, source) {
-        const shader = gl.createShader(type);
-        gl.shaderSource(shader, source);
-        gl.compileShader(shader);
-        if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
-          console.error('Shader compile error:', gl.getShaderInfoLog(shader));
-          gl.deleteShader(shader);
-          return null;
-        }
-        return shader;
-      }
-  
-      const vs = compileShader(gl.VERTEX_SHADER, vsSrc);
-      const fs = compileShader(gl.FRAGMENT_SHADER, fsSrc);
-      if (!vs || !fs) return null;
-  
-      const prog = gl.createProgram();
-      gl.attachShader(prog, vs);
-      gl.attachShader(prog, fs);
-      gl.linkProgram(prog);
-      if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) {
-        console.error('Program link error:', gl.getProgramInfoLog(prog));
+  `;
+
+  let fragmentSrc = editor.value;
+
+  // Full-screen quad
+  let buffer = gl.createBuffer();
+  gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+  let vertices = new Float32Array([
+    -1, -1,   1, -1,  -1,  1,
+    -1,  1,   1, -1,   1,  1
+  ]);
+  gl.bufferData(gl.ARRAY_BUFFER, vertices, gl.STATIC_DRAW);
+
+  let timeUniformLocation = null;
+  let program = null;
+  let startTime = performance.now();
+
+  // Helper: compile and link
+  function createShaderProgram(vsSrc, fsSrc) {
+    function compileShader(type, source) {
+      const shader = gl.createShader(type);
+      gl.shaderSource(shader, source);
+      gl.compileShader(shader);
+      if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+        console.error('Shader compile error:', gl.getShaderInfoLog(shader));
+        gl.deleteShader(shader);
         return null;
       }
-      return prog;
+      return shader;
     }
-  
-    function updateShader() {
-      fragmentSrc = editor.value;
-      const newProgram = createShaderProgram(vertexSrc, fragmentSrc);
-      if (newProgram) {
-        program = newProgram;
-        gl.useProgram(program);
-        const positionLocation = gl.getAttribLocation(program, 'a_position');
-        gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
-        gl.enableVertexAttribArray(positionLocation);
-        gl.vertexAttribPointer(positionLocation, 2, gl.FLOAT, false, 0, 0);
-  
-        timeUniformLocation = gl.getUniformLocation(program, 'u_time');
-      }
+    const vs = compileShader(gl.VERTEX_SHADER, vsSrc);
+    const fs = compileShader(gl.FRAGMENT_SHADER, fsSrc);
+    if (!vs || !fs) return null;
+
+    const prog = gl.createProgram();
+    gl.attachShader(prog, vs);
+    gl.attachShader(prog, fs);
+    gl.linkProgram(prog);
+    if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) {
+      console.error('Program link error:', gl.getProgramInfoLog(prog));
+      return null;
     }
-  
-    updateShader(); // compile initially
-  
-    function render() {
-      requestAnimationFrame(render);
-      if (!program) return;
-  
-      let time = (performance.now() - startTime) * 0.001;
-      gl.viewport(0, 0, canvas.width, canvas.height);
-      gl.clearColor(0, 0, 0, 1);
-      gl.clear(gl.COLOR_BUFFER_BIT);
-  
+    return prog;
+  }
+
+  function updateShader() {
+    fragmentSrc = editor.value;
+    const newProgram = createShaderProgram(vertexSrc, fragmentSrc);
+    if (newProgram) {
+      program = newProgram;
       gl.useProgram(program);
-      if (timeUniformLocation) {
-        gl.uniform1f(timeUniformLocation, time);
-      }
-      gl.drawArrays(gl.TRIANGLES, 0, 6);
+      const positionLocation = gl.getAttribLocation(program, 'a_position');
+      gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+      gl.enableVertexAttribArray(positionLocation);
+      gl.vertexAttribPointer(positionLocation, 2, gl.FLOAT, false, 0, 0);
+      timeUniformLocation = gl.getUniformLocation(program, 'u_time');
     }
-    render();
-  
-    // Canvas resize
-    function resizeCanvas() {
-      const displayWidth = canvas.clientWidth;
-      const displayHeight = canvas.clientHeight;
-      if (canvas.width !== displayWidth || canvas.height !== displayHeight) {
-        canvas.width  = displayWidth;
-        canvas.height = displayHeight;
-      }
+  }
+
+  updateShader(); // compile once
+
+  function render() {
+    requestAnimationFrame(render);
+    if (!program) return;
+    let time = (performance.now() - startTime) * 0.001;
+    gl.viewport(0, 0, canvas.width, canvas.height);
+    gl.clearColor(0, 0, 0, 1);
+    gl.clear(gl.COLOR_BUFFER_BIT);
+
+    gl.useProgram(program);
+    if (timeUniformLocation) {
+      gl.uniform1f(timeUniformLocation, time);
     }
-    window.addEventListener('resize', resizeCanvas);
-    resizeCanvas();
-  
-    // Editor auto‑recompile
-    editor.addEventListener('input', updateShader);
-  
-    // Toggle editor
-    toggleBtn.addEventListener('click', () => {
-      editor.classList.toggle('hidden');
-    });
-  })();
-  </script>
-  
-  <style>
-  .shader-widget {
-    border: 1px solid #ccc;
-    margin: 1em 0;
-    padding: 1em;
-    max-width: 600px;
-    position: relative;
+    gl.drawArrays(gl.TRIANGLES, 0, 6);
   }
-  .shader-canvas {
-    width: 100%;
-    height: 300px;
-    background: #000;
-    display: block;
+  render();
+
+  function resizeCanvas() {
+    const displayWidth = canvas.clientWidth;
+    const displayHeight = canvas.clientHeight;
+    if (canvas.width !== displayWidth || canvas.height !== displayHeight) {
+      canvas.width = displayWidth;
+      canvas.height = displayHeight;
+    }
   }
-  .shader-editor {
-    width: 100%;
-    height: 200px;
-    display: block;
-    margin-top: 1em;
-    font-family: monospace;
-    resize: vertical;
-  }
-  .hidden {
-    display: none;
-  }
-  .toggle-button {
-    margin-top: 1em;
-  }
-  </style>
-  
-    padding: 1em;
-    max-width: 600px;
-    position: relative;
-  }
-  .shader-canvas {
-    width: 100%;
-    height: 300px;
-    display: block;
-    background: #000;
-  }
-  .shader-editor {
-    width: 100%;
-    height: 200px;
-    display: block;
-    margin-top: 1em;
-    font-family: monospace;
-    resize: vertical;
-  }
-  .hidden {
-    display: none;
-  }
-  button.toggle-button {
-    margin-top: 1em;
-  }
-  </style>
-  
+  window.addEventListener('resize', resizeCanvas);
+  resizeCanvas();
+
+  editor.addEventListener('input', updateShader);
+
+  toggleBtn.addEventListener('click', () => {
+    editor.classList.toggle('hidden');
+  });
+})();
+</script>
+
+<style>
+.shader-widget {
+  border: 1px solid #ccc;
+  margin: 1em 0;
+  padding: 1em;
+  max-width: 600px;
+  position: relative;
+}
+.shader-canvas {
+  width: 100%;
+  height: 300px;
+  background: #000;
+  display: block;
+}
+.shader-editor {
+  width: 100%;
+  height: 200px;
+  display: block;
+  margin-top: 1em;
+  font-family: monospace;
+  resize: vertical;
+}
+.hidden {
+  display: none;
+}
+.toggle-button {
+  margin-top: 1em;
+}
+</style>

@@ -7,7 +7,7 @@ has_children: false
 
 # Gallery of Light and Shade
 
-What can you do with shaders? All this can be yours ...!
+What can you do with shaders? All this can be yours…!
 
 # Testing Multiple Shaders in One Page
 
@@ -15,7 +15,7 @@ Below are two different GLSL fragments, each in its own widget.
 
 ---
 
-### 1. A simple gradient:
+### 1. A simple gradient
 
 {% capture gradient %}
 #ifdef GL_ES
@@ -33,7 +33,7 @@ void main() {
 
 ---
 
-### 2. Pulsing circle:
+### 2. Pulsing circle
 
 {% capture pulsing_circle %}
 #ifdef GL_ES
