@@ -1,0 +1,49 @@
+<!-- _includes/glsl-widget-test.html -->
+{% assign widget_id = include.id | default: "glsl-widget-default" %}
+
+<div style="margin: 20px 0; padding: 20px; border: 1px solid #ddd; background-color: #f8f8f8;">
+  <h3>GLSL Widget Test: {{ widget_id }}</h3>
+  
+  <p id="{{ widget_id }}-message">If you see this message unchanged, JavaScript is not running.</p>
+  
+  <button id="{{ widget_id }}-test-btn" 
+          style="padding: 10px; background-color: #4CAF50; color: white; border: none; cursor: pointer;">
+    Click Me to Test JavaScript
+  </button>
+  
+  <div style="margin-top: 20px;">
+    <canvas id="{{ widget_id }}-test-canvas" width="300" height="150" 
+            style="border: 1px solid #000; background-color: #000;"></canvas>
+  </div>
+</div>
+
+<script>
+  // Basic JavaScript execution test
+  document.getElementById("{{ widget_id }}-message").textContent = 
+    "JavaScript is working! This text was changed by JavaScript.";
+  
+  // Button click test
+  document.getElementById("{{ widget_id }}-test-btn").addEventListener("click", function() {
+    alert("Button click detected for {{ widget_id }}!");
+    document.getElementById("{{ widget_id }}-message").textContent = 
+      "Button was clicked! JavaScript event handling is working.";
+  });
+  
+  // Basic canvas test
+  var canvas = document.getElementById("{{ widget_id }}-test-canvas");
+  var ctx = canvas.getContext("2d");
+  
+  // Draw a simple gradient
+  var gradient = ctx.createLinearGradient(0, 0, canvas.width, 0);
+  gradient.addColorStop(0, "red");
+  gradient.addColorStop(0.5, "green");
+  gradient.addColorStop(1, "blue");
+  
+  ctx.fillStyle = gradient;
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  
+  // Add text
+  ctx.fillStyle = "white";
+  ctx.font = "16px Arial";
+  ctx.fillText("Canvas is working!", 20, 75);
+</script>

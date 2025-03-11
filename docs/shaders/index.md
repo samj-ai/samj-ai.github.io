@@ -9,6 +9,10 @@ has_children: false
 
 What can you do with shaders? All this can be yours…!
 
+## Test widget
+
+{% include glsl-widget-test.html id="test1" %}
+
 ## Rainbow Gradient
 
 A simple gradient that shifts colors over time:
