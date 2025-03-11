@@ -29,6 +29,8 @@ void main() {
 <div class="glsl-widget" data-widget-id="{{ widget_id }}">
   <div class="glsl-canvas-container">
     <canvas class="glsl-canvas" width="{{ width }}" height="{{ height }}"></canvas>
+    <div class="glsl-error" style="display: none; color: red; padding: 10px; background: #ffeeee; margin-top: 10px; border: 1px solid #ffcccc;"></div>
+    <div class="glsl-status" style="color: #666; font-size: 12px; margin-top: 5px; text-align: right;"></div>
   </div>
   
   <div class="glsl-editor-container">
@@ -38,6 +40,7 @@ void main() {
   <div class="glsl-controls">
     <button class="glsl-run">Run Shader</button>
     <button class="glsl-reset">Reset</button>
+    <button class="glsl-debug">Debug Info</button>
   </div>
 </div>
 
@@ -94,18 +97,23 @@ void main() {
 <script>
   // Initialize all GLSL widgets on the page
   document.addEventListener('DOMContentLoaded', function() {
+    console.log("GLSL Widgets: Initializing...");
     document.querySelectorAll('.glsl-widget').forEach(initWidget);
   });
   
   function initWidget(widgetElement) {
     // Get widget ID
     const widgetId = widgetElement.getAttribute('data-widget-id');
+    console.log("GLSL Widget: Initializing widget with ID:", widgetId);
     
     // Get the elements
     const canvas = widgetElement.querySelector('.glsl-canvas');
     const editor = widgetElement.querySelector('.glsl-editor');
     const runButton = widgetElement.querySelector('.glsl-run');
     const resetButton = widgetElement.querySelector('.glsl-reset');
+    const debugButton = widgetElement.querySelector('.glsl-debug');
+    const errorElement = widgetElement.querySelector('.glsl-error');
+    const statusElement = widgetElement.querySelector('.glsl-status');
     
     // Store the initial code
     const initialCode = editor.value;
@@ -117,27 +125,86 @@ void main() {
     let isRunning = false;
     let animationFrameId = null;
     
+    // Display error
+    function showError(message) {
+      errorElement.innerHTML = message;
+      errorElement.style.display = 'block';
+      console.error(`GLSL Widget [${widgetId}] Error:`, message);
+    }
+    
+    // Clear error
+    function clearError() {
+      errorElement.innerHTML = '';
+      errorElement.style.display = 'none';
+    }
+    
+    // Update status
+    function updateStatus(message) {
+      statusElement.innerHTML = message;
+      console.log(`GLSL Widget [${widgetId}] Status:`, message);
+    }
+    
     // Initialize WebGL
     function initGL() {
-      // Try to get WebGL context
-      gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+      clearError();
       
-      if (!gl) {
-        console.error('Unable to initialize WebGL. Your browser may not support it.');
-        widgetElement.innerHTML = '<div style="color: red; padding: 20px;">WebGL is not supported in your browser.</div>';
+      // Try to get WebGL context
+      try {
+        gl = canvas.getContext('webgl', { preserveDrawingBuffer: true }) || 
+             canvas.getContext('experimental-webgl', { preserveDrawingBuffer: true });
+      } catch (e) {
+        showError(`WebGL error: ${e.message}`);
         return false;
       }
       
+      if (!gl) {
+        showError('Unable to initialize WebGL. Your browser may not support it.');
+        return false;
+      }
+      
+      // Check if context is valid
+      if (gl.isContextLost()) {
+        showError('WebGL context is lost.');
+        return false;
+      }
+      
+      updateStatus('WebGL initialized successfully');
       return true;
+    }
+    
+    // Show debug info
+    function showDebugInfo() {
+      if (!gl) {
+        showError('WebGL not initialized');
+        return;
+      }
+      
+      const debugInfo = gl.getExtension('WEBGL_debug_renderer_info');
+      let info = 'WebGL Debug Info:\n';
+      
+      if (debugInfo) {
+        info += `Vendor: ${gl.getParameter(debugInfo.UNMASKED_VENDOR_WEBGL)}\n`;
+        info += `Renderer: ${gl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL)}\n`;
+      }
+      
+      info += `WebGL Version: ${gl.getParameter(gl.VERSION)}\n`;
+      info += `Shader Version: ${gl.getParameter(gl.SHADING_LANGUAGE_VERSION)}\n`;
+      info += `Canvas Size: ${canvas.width}x${canvas.height}`;
+      
+      alert(info);
+      console.log(info);
     }
     
     // Compile fragment shader and link program
     function compileAndLink(fragmentShaderSource) {
       if (!gl) return false;
       
+      clearError();
+      
       // If there's an existing program, delete it
       if (program) {
         gl.deleteProgram(program);
+        program = null;
       }
       
       // Create a new program
@@ -150,8 +217,7 @@ void main() {
       
       if (!gl.getShaderParameter(fragmentShader, gl.COMPILE_STATUS)) {
         const error = gl.getShaderInfoLog(fragmentShader);
-        console.error('Fragment shader compilation error:', error);
-        alert('Shader compilation error: ' + error);
+        showError(`Fragment shader compilation error: ${error}`);
         return false;
       }
       
@@ -170,7 +236,8 @@ void main() {
       gl.compileShader(vertexShader);
       
       if (!gl.getShaderParameter(vertexShader, gl.COMPILE_STATUS)) {
-        console.error('Vertex shader compilation error:', gl.getShaderInfoLog(vertexShader));
+        const error = gl.getShaderInfoLog(vertexShader);
+        showError(`Vertex shader compilation error: ${error}`);
         return false;
       }
       
@@ -182,7 +249,8 @@ void main() {
       gl.linkProgram(program);
       
       if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
-        console.error('Program linking error:', gl.getProgramInfoLog(program));
+        const error = gl.getProgramInfoLog(program);
+        showError(`Program linking error: ${error}`);
         return false;
       }
       
@@ -203,6 +271,7 @@ void main() {
       gl.enableVertexAttribArray(positionLocation);
       gl.vertexAttribPointer(positionLocation, 2, gl.FLOAT, false, 0, 0);
       
+      updateStatus('Shader compiled successfully');
       return true;
     }
     
@@ -210,30 +279,41 @@ void main() {
     function render() {
       if (!gl || !program) return;
       
-      // Use the program
-      gl.useProgram(program);
-      
-      // Set the viewport
-      gl.viewport(0, 0, canvas.width, canvas.height);
-      
-      // Clear the canvas
-      gl.clearColor(0.0, 0.0, 0.0, 1.0);
-      gl.clear(gl.COLOR_BUFFER_BIT);
-      
-      // Set uniforms
-      const timeLocation = gl.getUniformLocation(program, 'time');
-      const resolutionLocation = gl.getUniformLocation(program, 'resolution');
-      
-      const currentTime = (Date.now() - startTime) / 1000.0;
-      gl.uniform1f(timeLocation, currentTime);
-      gl.uniform2f(resolutionLocation, canvas.width, canvas.height);
-      
-      // Draw the quad
-      gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
-      
-      // Request next frame
-      if (isRunning) {
-        animationFrameId = requestAnimationFrame(render);
+      try {
+        // Use the program
+        gl.useProgram(program);
+        
+        // Set the viewport
+        gl.viewport(0, 0, canvas.width, canvas.height);
+        
+        // Clear the canvas
+        gl.clearColor(0.0, 0.0, 0.0, 1.0);
+        gl.clear(gl.COLOR_BUFFER_BIT);
+        
+        // Set uniforms
+        const timeLocation = gl.getUniformLocation(program, 'time');
+        const resolutionLocation = gl.getUniformLocation(program, 'resolution');
+        
+        const currentTime = (Date.now() - startTime) / 1000.0;
+        
+        if (timeLocation !== null) {
+          gl.uniform1f(timeLocation, currentTime);
+        }
+        
+        if (resolutionLocation !== null) {
+          gl.uniform2f(resolutionLocation, canvas.width, canvas.height);
+        }
+        
+        // Draw the quad
+        gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+        
+        // Request next frame
+        if (isRunning) {
+          animationFrameId = requestAnimationFrame(render);
+        }
+      } catch (e) {
+        stopAnimation();
+        showError(`Render error: ${e.message}`);
       }
     }
     
@@ -242,6 +322,7 @@ void main() {
       if (!isRunning) {
         isRunning = true;
         startTime = Date.now();
+        updateStatus('Animation started');
         render();
       }
     }
@@ -252,15 +333,21 @@ void main() {
       if (animationFrameId) {
         cancelAnimationFrame(animationFrameId);
         animationFrameId = null;
+        updateStatus('Animation stopped');
       }
     }
     
     // Run the shader
     function runShader() {
       stopAnimation();
+      clearError();
       
-      if (compileAndLink(editor.value)) {
-        startAnimation();
+      try {
+        if (compileAndLink(editor.value)) {
+          startAnimation();
+        }
+      } catch (e) {
+        showError(`Error running shader: ${e.message}`);
       }
     }
     
@@ -271,12 +358,18 @@ void main() {
     }
     
     // Initialize the widget
-    if (initGL()) {
-      runShader();
-      
-      // Set up event listeners
-      runButton.addEventListener('click', runShader);
-      resetButton.addEventListener('click', resetShader);
+    try {
+      if (initGL()) {
+        // Set up event listeners
+        runButton.addEventListener('click', runShader);
+        resetButton.addEventListener('click', resetShader);
+        debugButton.addEventListener('click', showDebugInfo);
+        
+        // Run the shader
+        runShader();
+      }
+    } catch (e) {
+      showError(`Widget initialization error: ${e.message}`);
     }
   }
 </script>
