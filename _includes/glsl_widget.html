@@ -1,0 +1,295 @@
+<!-- _includes/glsl-widget.html -->
+{% assign widget_id = include.id | default: "glsl-widget-default" %}
+{% assign width = include.width | default: "500" %}
+{% assign height = include.height | default: "300" %}
+
+{% capture default_shader %}
+// Default fragment shader
+precision mediump float;
+
+uniform float time;
+uniform vec2 resolution;
+
+void main() {
+    vec2 uv = gl_FragCoord.xy / resolution.xy;
+    
+    // Simple color gradient based on position and time
+    vec3 color = vec3(
+        0.5 + 0.5 * sin(time + uv.x * 6.0),
+        0.5 + 0.5 * sin(time + uv.y * 6.0),
+        0.5 + 0.5 * sin(time + (uv.x + uv.y) * 6.0)
+    );
+    
+    gl_FragColor = vec4(color, 1.0);
+}
+{% endcapture %}
+
+{% assign initial_code = include.code | default: default_shader %}
+
+<div class="glsl-widget" data-widget-id="{{ widget_id }}">
+  <div class="glsl-canvas-container">
+    <canvas class="glsl-canvas" width="{{ width }}" height="{{ height }}"></canvas>
+  </div>
+  
+  <div class="glsl-editor-container">
+    <textarea class="glsl-editor">{{ initial_code }}</textarea>
+  </div>
+  
+  <div class="glsl-controls">
+    <button class="glsl-run">Run Shader</button>
+    <button class="glsl-reset">Reset</button>
+  </div>
+</div>
+
+{% capture widget_styles %}
+<style>
+  .glsl-widget {
+    margin: 20px 0;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    background-color: #f8f8f8;
+  }
+  
+  .glsl-canvas {
+    width: 100%;
+    max-width: 100%;
+    height: auto;
+    background-color: #000;
+    border: 1px solid #333;
+  }
+  
+  .glsl-editor {
+    width: 100%;
+    height: 250px;
+    margin-top: 10px;
+    font-family: monospace;
+    font-size: 14px;
+    padding: 10px;
+    border: 1px solid #ccc;
+    resize: vertical;
+  }
+  
+  .glsl-controls {
+    margin-top: 10px;
+  }
+  
+  .glsl-controls button {
+    margin-right: 10px;
+    padding: 5px 10px;
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+  
+  .glsl-controls button:hover {
+    background-color: #45a049;
+  }
+</style>
+{% endcapture %}
+
+{% capture widget_script %}
+<script>
+  // Initialize all GLSL widgets on the page
+  document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.glsl-widget').forEach(initWidget);
+  });
+  
+  function initWidget(widgetElement) {
+    // Get widget ID
+    const widgetId = widgetElement.getAttribute('data-widget-id');
+    
+    // Get the elements
+    const canvas = widgetElement.querySelector('.glsl-canvas');
+    const editor = widgetElement.querySelector('.glsl-editor');
+    const runButton = widgetElement.querySelector('.glsl-run');
+    const resetButton = widgetElement.querySelector('.glsl-reset');
+    
+    // Store the initial code
+    const initialCode = editor.value;
+    
+    // Set up WebGL
+    let gl = null;
+    let program = null;
+    let startTime = Date.now();
+    let isRunning = false;
+    let animationFrameId = null;
+    
+    // Initialize WebGL
+    function initGL() {
+      // Try to get WebGL context
+      gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+      
+      if (!gl) {
+        console.error('Unable to initialize WebGL. Your browser may not support it.');
+        widgetElement.innerHTML = '<div style="color: red; padding: 20px;">WebGL is not supported in your browser.</div>';
+        return false;
+      }
+      
+      return true;
+    }
+    
+    // Compile fragment shader and link program
+    function compileAndLink(fragmentShaderSource) {
+      if (!gl) return false;
+      
+      // If there's an existing program, delete it
+      if (program) {
+        gl.deleteProgram(program);
+      }
+      
+      // Create a new program
+      program = gl.createProgram();
+      
+      // Create and compile fragment shader
+      const fragmentShader = gl.createShader(gl.FRAGMENT_SHADER);
+      gl.shaderSource(fragmentShader, fragmentShaderSource);
+      gl.compileShader(fragmentShader);
+      
+      if (!gl.getShaderParameter(fragmentShader, gl.COMPILE_STATUS)) {
+        const error = gl.getShaderInfoLog(fragmentShader);
+        console.error('Fragment shader compilation error:', error);
+        alert('Shader compilation error: ' + error);
+        return false;
+      }
+      
+      // Create vertex shader
+      const vertexShader = gl.createShader(gl.VERTEX_SHADER);
+      const vertexShaderSource = `
+        attribute vec2 position;
+        
+        void main() {
+          gl_Position = vec4(position, 0.0, 1.0);
+        }
+      `;
+      
+      // Compile vertex shader
+      gl.shaderSource(vertexShader, vertexShaderSource);
+      gl.compileShader(vertexShader);
+      
+      if (!gl.getShaderParameter(vertexShader, gl.COMPILE_STATUS)) {
+        console.error('Vertex shader compilation error:', gl.getShaderInfoLog(vertexShader));
+        return false;
+      }
+      
+      // Attach shaders to program
+      gl.attachShader(program, vertexShader);
+      gl.attachShader(program, fragmentShader);
+      
+      // Link program
+      gl.linkProgram(program);
+      
+      if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
+        console.error('Program linking error:', gl.getProgramInfoLog(program));
+        return false;
+      }
+      
+      // Create a full-screen quad
+      const vertices = new Float32Array([
+        -1.0, -1.0,
+         1.0, -1.0,
+        -1.0,  1.0,
+         1.0,  1.0
+      ]);
+      
+      const vertexBuffer = gl.createBuffer();
+      gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
+      gl.bufferData(gl.ARRAY_BUFFER, vertices, gl.STATIC_DRAW);
+      
+      // Set up attribute
+      const positionLocation = gl.getAttribLocation(program, 'position');
+      gl.enableVertexAttribArray(positionLocation);
+      gl.vertexAttribPointer(positionLocation, 2, gl.FLOAT, false, 0, 0);
+      
+      return true;
+    }
+    
+    // Render the shader
+    function render() {
+      if (!gl || !program) return;
+      
+      // Use the program
+      gl.useProgram(program);
+      
+      // Set the viewport
+      gl.viewport(0, 0, canvas.width, canvas.height);
+      
+      // Clear the canvas
+      gl.clearColor(0.0, 0.0, 0.0, 1.0);
+      gl.clear(gl.COLOR_BUFFER_BIT);
+      
+      // Set uniforms
+      const timeLocation = gl.getUniformLocation(program, 'time');
+      const resolutionLocation = gl.getUniformLocation(program, 'resolution');
+      
+      const currentTime = (Date.now() - startTime) / 1000.0;
+      gl.uniform1f(timeLocation, currentTime);
+      gl.uniform2f(resolutionLocation, canvas.width, canvas.height);
+      
+      // Draw the quad
+      gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+      
+      // Request next frame
+      if (isRunning) {
+        animationFrameId = requestAnimationFrame(render);
+      }
+    }
+    
+    // Start the animation
+    function startAnimation() {
+      if (!isRunning) {
+        isRunning = true;
+        startTime = Date.now();
+        render();
+      }
+    }
+    
+    // Stop the animation
+    function stopAnimation() {
+      isRunning = false;
+      if (animationFrameId) {
+        cancelAnimationFrame(animationFrameId);
+        animationFrameId = null;
+      }
+    }
+    
+    // Run the shader
+    function runShader() {
+      stopAnimation();
+      
+      if (compileAndLink(editor.value)) {
+        startAnimation();
+      }
+    }
+    
+    // Reset the shader
+    function resetShader() {
+      editor.value = initialCode;
+      runShader();
+    }
+    
+    // Initialize the widget
+    if (initGL()) {
+      runShader();
+      
+      // Set up event listeners
+      runButton.addEventListener('click', runShader);
+      resetButton.addEventListener('click', resetShader);
+    }
+  }
+</script>
+{% endcapture %}
+
+<!-- Only include styles once per page -->
+{% if glsl_widget_styles_loaded != true %}
+  {{ widget_styles }}
+  {% assign glsl_widget_styles_loaded = true %}
+{% endif %}
+
+<!-- Only include script once per page -->
+{% if glsl_widget_script_loaded != true %}
+  {{ widget_script }}
+  {% assign glsl_widget_script_loaded = true %}
+{% endif %}
