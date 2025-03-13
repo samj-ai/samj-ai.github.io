@@ -3,7 +3,7 @@
 <div style="background: #eee; padding: 5px; margin-bottom: 10px; border: 1px solid #999;">
   <strong>Debug Info:</strong> The widget ID is "{{ widget_id }}"
 </div>
-<div style="margin: 20px 0; padding: 20px; border: 1px solid #ddd; background-color: #f8f8f8;">
+<div data-widget-id="{{ widget_id }}" class="glsl-widget" style="margin: 20px 0; padding: 20px; border: 1px solid #ddd; background-color: #f8f8f8;">
   <h3>GLSL Widget Test: {{ widget_id }}</h3>
   <p id="{{ widget_id }}-message">If you see this message unchanged, JavaScript is not running.</p>
   <button id="{{ widget_id }}-test-btn"
@@ -15,51 +15,82 @@
       style="border: 1px solid #000; background-color: #000;"></canvas>
   </div>
 </div>
-<script>
-// Wait for DOM to be fully loaded
-document.addEventListener("DOMContentLoaded", function() {
-  try {
-    console.log("Initializing widget: {{ widget_id }}");
-    
-    // Basic JavaScript execution test
-    var messageElement = document.getElementById("{{ widget_id }}-message");
-    if (messageElement) {
-      messageElement.textContent = "JavaScript is working! This text was changed by JavaScript.";
-    } else {
-      console.error("Could not find element: {{ widget_id }}-message");
-    }
-    
-    // Button click test
-    var buttonElement = document.getElementById("{{ widget_id }}-test-btn");
-    if (buttonElement) {
-      buttonElement.addEventListener("click", function() {
-        alert("Button click detected for {{ widget_id }}!");
-        messageElement.textContent = "Button was clicked! JavaScript event handling is working.";
-      });
-    } else {
-      console.error("Could not find element: {{ widget_id }}-test-btn");
-    }
-    
-    // Basic canvas test
-    var canvas = document.getElementById("{{ widget_id }}-test-canvas");
-    if (canvas) {
-      var ctx = canvas.getContext("2d");
-      // Draw a simple gradient
-      var gradient = ctx.createLinearGradient(0, 0, canvas.width, 0);
-      gradient.addColorStop(0, "red");
-      gradient.addColorStop(0.5, "green");
-      gradient.addColorStop(1, "blue");
-      ctx.fillStyle = gradient;
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-      // Add text
-      ctx.fillStyle = "white";
-      ctx.font = "16px Arial";
-      ctx.fillText("Canvas is working!", 20, 75);
-    } else {
-      console.error("Could not find canvas: {{ widget_id }}-test-canvas");
-    }
-  } catch (error) {
-    console.error("Error in widget {{ widget_id }}:", error);
+
+{% capture widget_script %}
+<script type="text/javascript">
+// Safer approach - only define the widget ID as a data attribute
+document.currentScript.setAttribute('data-for-widget', '{{ widget_id }}');
+</script>
+{% endcapture %}
+{{ widget_script | strip }}
+
+<script type="text/javascript">
+(function() {
+  // Get the widget ID from the previous script tag
+  var script = document.currentScript.previousElementSibling;
+  var widgetId = script.getAttribute('data-for-widget');
+  
+  // Only proceed if we found the widget ID
+  if (!widgetId) {
+    console.error("Widget ID not found");
+    return;
   }
-});
+  
+  function initWidget() {
+    try {
+      console.log("Initializing widget: " + widgetId);
+      
+      // Basic JavaScript execution test
+      var messageEl = document.getElementById(widgetId + "-message");
+      if (messageEl) {
+        messageEl.textContent = "JavaScript is working! This text was changed by JavaScript.";
+      } else {
+        console.error("Message element not found for: " + widgetId);
+      }
+      
+      // Button click test
+      var buttonEl = document.getElementById(widgetId + "-test-btn");
+      if (buttonEl) {
+        buttonEl.addEventListener("click", function() {
+          alert("Button click detected for " + widgetId + "!");
+          if (messageEl) {
+            messageEl.textContent = "Button was clicked! JavaScript event handling is working.";
+          }
+        });
+      } else {
+        console.error("Button element not found for: " + widgetId);
+      }
+      
+      // Basic canvas test
+      var canvas = document.getElementById(widgetId + "-test-canvas");
+      if (canvas) {
+        try {
+          var ctx = canvas.getContext("2d");
+          var gradient = ctx.createLinearGradient(0, 0, canvas.width, 0);
+          gradient.addColorStop(0, "red");
+          gradient.addColorStop(0.5, "green");
+          gradient.addColorStop(1, "blue");
+          ctx.fillStyle = gradient;
+          ctx.fillRect(0, 0, canvas.width, canvas.height);
+          ctx.fillStyle = "white";
+          ctx.font = "16px Arial";
+          ctx.fillText("Canvas is working!", 20, 75);
+        } catch (canvasError) {
+          console.error("Canvas error:", canvasError);
+        }
+      } else {
+        console.error("Canvas element not found for: " + widgetId);
+      }
+    } catch(e) {
+      console.error("Error in widget " + widgetId + ":", e);
+    }
+  }
+  
+  // Cross-browser DOM ready handler
+  if (document.readyState === "complete" || document.readyState === "interactive") {
+    setTimeout(initWidget, 1);
+  } else {
+    document.addEventListener("DOMContentLoaded", initWidget);
+  }
+})();
 </script>
