@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>JavaScript Test</title>
+</head>
+<body>
+  <div>
+    <h1>JavaScript Test Page</h1>
+    <p id="test-message">If you see this message unchanged, JavaScript is not running.</p>
+    <button id="test-button">Click Me to Test JavaScript</button>
+    <div>
+      <canvas id="test-canvas" width="300" height="150" 
+              style="border: 1px solid #000; background-color: #000;"></canvas>
+    </div>
+  </div>
+
+  <script>
+    // Basic JavaScript execution test
+    document.getElementById("test-message").textContent = 
+      "JavaScript is working! This text was changed by JavaScript.";
+    
+    // Button click test
+    document.getElementById("test-button").addEventListener("click", function() {
+      alert("Button click detected!");
+      document.getElementById("test-message").textContent = 
+        "Button was clicked! JavaScript event handling is working.";
+    });
+    
+    // Basic canvas test
+    var canvas = document.getElementById("test-canvas");
+    var ctx = canvas.getContext("2d");
+    var gradient = ctx.createLinearGradient(0, 0, canvas.width, 0);
+    gradient.addColorStop(0, "red");
+    gradient.addColorStop(0.5, "green");
+    gradient.addColorStop(1, "blue");
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = "white";
+    ctx.font = "16px Arial";
+    ctx.fillText("Canvas is working!", 20, 75);
+  </script>
+</body>
+</html>
