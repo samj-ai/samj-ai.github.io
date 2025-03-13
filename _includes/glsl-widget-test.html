@@ -16,27 +16,50 @@
   </div>
 </div>
 <script>
-// Basic JavaScript execution test
-document.getElementById("{{ widget_id }}-message").textContent =
-  "JavaScript is working! This text was changed by JavaScript.";
-// Button click test
-document.getElementById("{{ widget_id }}-test-btn").addEventListener("click", function() {
-  alert("Button click detected for {{ widget_id }}!");
-  document.getElementById("{{ widget_id }}-message").textContent =
-    "Button was clicked! JavaScript event handling is working.";
+// Wait for DOM to be fully loaded
+document.addEventListener("DOMContentLoaded", function() {
+  try {
+    console.log("Initializing widget: {{ widget_id }}");
+    
+    // Basic JavaScript execution test
+    var messageElement = document.getElementById("{{ widget_id }}-message");
+    if (messageElement) {
+      messageElement.textContent = "JavaScript is working! This text was changed by JavaScript.";
+    } else {
+      console.error("Could not find element: {{ widget_id }}-message");
+    }
+    
+    // Button click test
+    var buttonElement = document.getElementById("{{ widget_id }}-test-btn");
+    if (buttonElement) {
+      buttonElement.addEventListener("click", function() {
+        alert("Button click detected for {{ widget_id }}!");
+        messageElement.textContent = "Button was clicked! JavaScript event handling is working.";
+      });
+    } else {
+      console.error("Could not find element: {{ widget_id }}-test-btn");
+    }
+    
+    // Basic canvas test
+    var canvas = document.getElementById("{{ widget_id }}-test-canvas");
+    if (canvas) {
+      var ctx = canvas.getContext("2d");
+      // Draw a simple gradient
+      var gradient = ctx.createLinearGradient(0, 0, canvas.width, 0);
+      gradient.addColorStop(0, "red");
+      gradient.addColorStop(0.5, "green");
+      gradient.addColorStop(1, "blue");
+      ctx.fillStyle = gradient;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      // Add text
+      ctx.fillStyle = "white";
+      ctx.font = "16px Arial";
+      ctx.fillText("Canvas is working!", 20, 75);
+    } else {
+      console.error("Could not find canvas: {{ widget_id }}-test-canvas");
+    }
+  } catch (error) {
+    console.error("Error in widget {{ widget_id }}:", error);
+  }
 });
-// Basic canvas test
-var canvas = document.getElementById("{{ widget_id }}-test-canvas");
-var ctx = canvas.getContext("2d");
-// Draw a simple gradient
-var gradient = ctx.createLinearGradient(0, 0, canvas.width, 0);
-gradient.addColorStop(0, "red");
-gradient.addColorStop(0.5, "green");
-gradient.addColorStop(1, "blue");
-ctx.fillStyle = gradient;
-ctx.fillRect(0, 0, canvas.width, canvas.height);
-// Add text
-ctx.fillStyle = "white";
-ctx.font = "16px Arial";
-ctx.fillText("Canvas is working!", 20, 75);
 </script>
