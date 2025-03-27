@@ -1,9 +1,8 @@
-```markdown
 ---
 layout: default
 title: "attention is logarithmic, actually"
 slug: "attention-is-logarithmic"
-date: 2025-03-20
+date: 2025-03-25
 ---
 
 # attention is logarithmic, actually
@@ -46,13 +45,13 @@ element wise multiplication takes every element in `a` and multiplies it with th
 
 the pseudo code will look like:
 
-~~~python
+```python
 n   = <big integer>
 a,b = arange(n), arange(n)
 c   = zeros(n)
 for i in range(n):
   c[i] = a[i] * b[i]
-~~~
+```
 
 time complexity wise, this is obviously linear. and performed on a single thread, this is true!
 
@@ -66,7 +65,7 @@ and you quickly find out that, the problem isn’t linear at all! it actually lo
 
 more concretely, we can analyze the work and depth of element wise multiplication:
 
-~~~
+```
 +-------+-------+-------------------+------+
 |   OP  | DEPTH |       INPUT       | WORK |
 +-------+-------+-------------------+------+
@@ -81,7 +80,7 @@ more concretely, we can analyze the work and depth of element wise multiplicatio
 |       |       |                   |      |
 | ASYMP |  O(1) |                   | O(n) |
 +-------+-------+-------------------+------+
-~~~
+```
 
 every operation required in the algorithm: load, mul, store, all have constant depth, and given enough parallel compute (up to the magical cutoff point mentioned above), all of them can effectively be done in constant time.
 
@@ -91,13 +90,13 @@ every operation required in the algorithm: load, mul, store, all have constant d
 
 summation (henceforth referred to as CONTRACT) is a bit more complicated than elementwise operations. here, we clearly see that there is a dependency between two steps (since accumulation requires calling into `c`’s state). and this cannot be done embarrassingly in parallel.
 
-~~~python
+```python
 n = <big integer>
 a = arange(n)
 c = 0
 for i in range(n):
   c += a[i]
-~~~
+```
 
 fortunately though, if you look a bit closer, you’ll realize that this is only a dependency between every *two* steps, or pairs.
 
@@ -110,7 +109,7 @@ for a list of length `n`, the progression is as follows:
 3. pairs of pairs of ... pairs
 4. after log₂(n) steps, you’ll have a single number that is the sum of every element in the list.
 
-~~~
+```
 +------------+----------+---------------------------------------+------+
 |     OP     |  DEPTH   |                 INPUT                 | WORK |
 +------------+----------+---------------------------------------+------+
@@ -131,13 +130,13 @@ for a list of length `n`, the progression is as follows:
 |            |          |                                       |      |
 |   ASYMP    | O(log n) |                                       | O(n) |
 +------------+----------+---------------------------------------+------+
-~~~
+```
 
 ---
 
 ## case 3: tensor product
 
-~~~
+```
 +-------+-------+-------------------------------+---------+
 |   OP  | DEPTH |             INPUT             |   WORK  |
 +-------+-------+-------------------------------+---------+
@@ -152,7 +151,7 @@ for a list of length `n`, the progression is as follows:
 |       |       |                               |         |
 | ASYMP |  O(1) |                               |  O(n³)  |
 +-------+-------+-------------------------------+---------+
-~~~
+```
 
 the [tensor product](https://en.wikipedia.org/wiki/Tensor_product) (henceforth called TENSOR) is a fundamental operation on tensors. basically, it takes all indices of two tensors and does element wise multiplication over all of the requested indices, (some of which can be shared).
 
@@ -172,15 +171,19 @@ the [matrix multiplication](https://en.wikipedia.org/wiki/Matrix_multiplication)
 
 given two tensors `A,B` of dimensionality `(i j)` and `(j k)`, the tensor product constructs a tensor `C` that has elements `C[i,j,k] = A[i,j] * B[j,k]`, and then sums (contracts) along the `j` dimension into a matrix `D` of shape `(i k)`. (for efficiency, `C` is usually never fully materialized, instead the contraction is fused between shards of the tensor product)
 
+```python
+print("hi")
+```
+
 this can be trivially batched / broadcasted by simply ignoring the outer axes. in short, the matmul is described as:
 
-~~~
+```
 einsum("...ij, ...jk -> ...ik", A, B)
-~~~
+```
 
 pseudocode for stuff under the hood:
 
-~~~python
+```python
 A = some matrix of shape (i j)
 B = some matrix of shape (j k)
 C = zeros of shape (i j k)
@@ -196,11 +199,11 @@ for _i in range i:
   for _j in range j:
     for _k in range k:
       D[_i,_k] += C[_i,_j,_k]           # contraction
-~~~
+```
 
 note that this is just a sequential composition of TENSOR into CONTRACT, which have depth complexity O(1) and O(log n) respectively:
 
-~~~
+```
 +----------+----------+---------------------------+---------+
 |    OP    |  DEPTH   |           INPUT           |   WORK  |
 +----------+----------+---------------------------+---------+
@@ -216,7 +219,7 @@ note that this is just a sequential composition of TENSOR into CONTRACT, which h
 |          |          |                           |         |
 |  ASYMP   | O(log n) |                           |  O(n³)  |
 +----------+----------+---------------------------+---------+
-~~~
+```
 
 ---
 
@@ -226,7 +229,7 @@ softmax is not at all special. elementwise application of e^x, followed by a con
 
 here’s the depth complexity analysis as usual:
 
-~~~
+```
 +-------+----------+-------------+------+
 |   OP  |  DEPTH   |    INPUT    | WORK |
 +-------+----------+-------------+------+
@@ -244,7 +247,7 @@ here’s the depth complexity analysis as usual:
 |       |          |             |      |
 | ASYMP | O(log n) |             | O(n) |
 +-------+----------+-------------+------+
-~~~
+```
 
 ---
 
@@ -252,7 +255,7 @@ here’s the depth complexity analysis as usual:
 
 and without further ado, attention. at this point we’re probably already used to the composition. here’s the depth analysis:
 
-~~~
+```
 +---------+------------+--------------------------------+---------+
 |    OP   |   DEPTH    |             INPUT              |   WORK  |
 +---------+------------+--------------------------------+---------+
@@ -272,7 +275,7 @@ and without further ado, attention. at this point we’re probably already used 
 |  ASYMP  |  O(logn +  |                                | O(bn²d) |
 |         |    logd)   |                                |         |
 +---------+------------+--------------------------------+---------+
-~~~
+```
 
 as we can see, through the sequential composition of an integer number of matmuls contractions, and a bunch of elementwise unary ops, attention has asymptotic depth complexity of just O(log n + log d), where `n` and `d` are sequence length and embedding dim respectively.
 
@@ -318,13 +321,12 @@ and now chip manufacturers have caught on, and realized that they can get anothe
 
 ---
 
-~~~bibtex
+```bibtex
 @misc{doan2025attnislogarithmic,
   title = {Attention is logarithmic, actually},
   url = {https://supaiku.com/attention-is-logarithmic},
   year = {2025}
 }
-~~~
+```
 
 [^1]: this is my reductionist take for what flash attention is.
-```

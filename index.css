@@ -459,7 +459,7 @@ pre > code {
     background: 0 0;
     padding: 0;
     font-size: .85rem;
-    display:grid
+    display: block; /* or inline-block; or just remove 'display' entirely */
 }
 
 pre > code [data-highlighted-chars] {
