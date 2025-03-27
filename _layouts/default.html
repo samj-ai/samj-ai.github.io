@@ -10,7 +10,8 @@
 
   <!-- Our CSS (use the same index.css from your minimal site) -->
   <link href="/index.css" rel="stylesheet" type="text/css" />
-
+  <!-- Import JetBrains Mono -->
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap">
   <!-- Example: if you want KaTeX or other scripts, put them here -->
   <link href="https://cdn.jsdelivr.net/npm/katex@0.16.0/dist/katex.min.css"
         rel="stylesheet" type="text/css" />
@@ -25,9 +26,12 @@
       <!-- Center content -->
       <div class="center">
         <div class="page-header">
-          <div class="popover-hint"></div>
+            <!-- Place the navigation inside the centered content -->
+            <nav class="post-nav">
+              <a href="{{ '/' | relative_url }}">Home</a>
+            </nav>
+            <div class="popover-hint"></div>
         </div>
-
         <!-- Here's where Jekyll injects the page’s content -->
         <article class="popover-hint">
           {{ content }}
