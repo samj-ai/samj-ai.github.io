@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en" saved-theme="dark">
+<head>
+  <meta charset="utf-8" />
+  <title>{{ page.title }} | {{ site.title }}</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <!-- If you want any meta tags or open graph tags, you can add them here -->
+  <link rel="icon" href="./static/icon.png" />
+
+  <!-- Our CSS (use the same index.css from your minimal site) -->
+  <link href="/index.css" rel="stylesheet" type="text/css" />
+
+  <!-- Example: if you want KaTeX or other scripts, put them here -->
+  <link href="https://cdn.jsdelivr.net/npm/katex@0.16.0/dist/katex.min.css"
+        rel="stylesheet" type="text/css" />
+
+</head>
+<body data-slug="{{ page.slug }}">
+  <div id="quartz-root" class="page">
+    <div id="quartz-body">
+      <!-- Left sidebar -->
+      <div class="left sidebar"></div>
+
+      <!-- Center content -->
+      <div class="center">
+        <div class="page-header">
+          <div class="popover-hint"></div>
+        </div>
+
+        <!-- Here's where Jekyll injects the page’s content -->
+        <article class="popover-hint">
+          {{ content }}
+        </article>
+      </div>
+
+      <!-- Right sidebar -->
+      <div class="right sidebar"></div>
+    </div>
+
+    <!-- Darkmode toggle, same as your minimal site -->
+    <div class="darkmode" style="display:none;">
+      <input class="toggle" id="darkmode-toggle" type="checkbox" tabIndex="-1" />
+    </div>
+  </div>
+
+  <!-- If you have JS for toggles, mermaid, etc., place it here -->
+  <!-- e.g. your callout script, mermaid script, etc. -->
+
+</body>
+</html>

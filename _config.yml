@@ -1,0 +1,20 @@
+title: "My Minimal Jekyll Blog"
+# We won't use the default Jekyll theme at all:
+theme:
+
+# Tell Jekyll to exclude any files/folders you don't want processed:
+exclude:
+  - "Gemfile"
+  - "Gemfile.lock"
+  - "README.md"
+  - "node_modules"
+  - ".gitignore"
+  - ".github"
+
+# No plugins:
+plugins: []
+
+# Optional: if you want Kramdown for math or other features:
+markdown: kramdown
+kramdown:
+  math_engine: katex

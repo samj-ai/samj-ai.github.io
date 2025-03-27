@@ -1,0 +1,1629 @@
+<!DOCTYPE html>
+<html lang="en" saved-theme="dark">
+<head>
+  <meta charset="utf-8" />
+  <title>attention is logarithmic, actually</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <!-- Open Graph tags -->
+  <meta property="og:title" content="attention is logarithmic, actually" />
+  <meta property="og:description" content="supaiku dot com § attention is logarithmic, actually § time complexity is a very bad model when working with parallelism. in which i make the case for work-depth analysis instead of time complexity." />
+  <meta property="og:image" content="./static/og-image.png" />
+  <meta property="og:width" content="1200" />
+  <meta property="og:height" content="675" />
+
+  <!-- Favicon / site icon -->
+  <link rel="icon" href="./static/icon.png" />
+
+  <!-- Standard Meta Description -->
+  <meta name="description" content="supaiku dot com § attention is logarithmic, actually § time complexity is a very bad model when working with parallelism. in which i make the case for work-depth analysis instead of time complexity." />
+  <meta name="generator" content="Quartz" />
+
+  <!-- Preconnect for fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" />
+
+  <!-- Main stylesheet -->
+  <link href="./index.css" rel="stylesheet" type="text/css" spa-preserve />
+
+  <!-- KaTeX (for math) -->
+  <link
+    href="https://cdn.jsdelivr.net/npm/katex@0.16.0/dist/katex.min.css"
+    rel="stylesheet"
+    type="text/css"
+    spa-preserve
+  />
+
+  <!-- JetBrains Mono font -->
+  <link
+    href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700;ital,wght@0,400;0,600;1,400;1,600&display=swap"
+    rel="stylesheet"
+    type="text/css"
+    spa-preserve
+  />
+
+  <!-- Optional: prescript.js (if you have it locally) -->
+  <script src="./prescript.js" type="application/javascript" spa-preserve></script>
+
+  <!-- If you’re using the fetchData logic, keep or remove as needed -->
+  <script type="application/javascript" spa-preserve>
+    const fetchData = fetch(`./static/contentIndex.json`).then(data => data.json())
+  </script>
+</head>
+
+<body data-slug="attention-is-logarithmic">
+  <div id="quartz-root" class="page">
+    <div id="quartz-body">
+      <!-- Left sidebar -->
+      <div class="left sidebar"></div>
+
+      <!-- Main center content -->
+      <div class="center">
+        <div class="page-header">
+          <div class="popover-hint"></div>
+        </div>
+
+        <article class="popover-hint">
+          <h3 id="supaiku-dot-com">
+            <a href="./" class="internal" data-slug="">supaiku dot com</a>
+            <a aria-hidden="true" tabindex="-1" href="#supaiku-dot-com" class="internal"> §</a>
+          </h3>
+
+          <h1
+            id="attention-is-logarithmic-actually"
+            onclick="document.getElementById('darkmode-toggle').click(); return false;"
+            href=""
+          >
+            attention is logarithmic, actually
+            <a
+              aria-hidden="true"
+              tabindex="-1"
+              href="#attention-is-logarithmic-actually"
+              class="internal"
+            >
+              §
+            </a>
+          </h1>
+
+          <hr />
+
+          <blockquote>
+            <p>time complexity is a very bad model when working with parallelism.</p>
+            <p>
+              in which i make the case for
+              <a
+                href="https://en.wikipedia.org/wiki/Analysis_of_parallel_algorithms"
+                class="external"
+              >
+                work-depth
+              </a>
+              analysis instead of
+              <a
+                href="https://en.wikipedia.org/wiki/Time_complexity"
+                class="external"
+              >
+                time complexity
+              </a>.
+            </p>
+          </blockquote>
+
+          <hr />
+
+          <p>
+            <a
+              href="https://en.wikipedia.org/wiki/Time_complexity"
+              class="external"
+            >
+              time complexity
+            </a>
+            is the default model brought up when discussing whether
+            an algorithm is “fast” or “slow”.
+          </p>
+          <p>
+            back in the 80s, when every computer had only one core and no one besides
+            a couple of
+            <a
+              href="https://en.wikipedia.org/wiki/Thinking_Machines_Corporation"
+              class="external"
+            >
+              weirdos
+            </a>
+            knew what a
+            <a
+              href="https://en.wikipedia.org/wiki/Single_instruction,_multiple_data"
+              class="external"
+            >
+              SIMD
+            </a>
+            was, this was largely correct.
+          </p>
+          <p>
+            but the year is now 2025. it is very hard to find computers with a single core.
+            even smartphones have 4-8 cores [source needed]. as a result,
+            time complexity largely fails as a measure of how fast or slow
+            certain algorithms are.
+          </p>
+          <p>
+            using time complexity, there is no way to distinguish between an
+            algorithm that requires O(n^3) operations that is
+            <a
+              href="https://en.wikipedia.org/wiki/Embarrassingly_parallel"
+              class="external"
+            >
+              embarrassingly parallel
+            </a>
+            , versus one that is irreducibly sequential
+          </p>
+          <p>
+            worse yet, time complexity is sometimes still used to describe
+            inherently parallel algorithms, such as every
+            <a
+              href="https://en.wikipedia.org/wiki/Computational_complexity_of_matrix_multiplication"
+              class="external"
+            >
+              linear algebra operation ever
+            </a>.
+          </p>
+          <p>
+            this is ridiculous. we need a better way to think about the “complexity”
+            of different algorithms. the
+            <a
+              href="https://www.cs.cmu.edu/~scandal/cacm/node1.html"
+              class="external"
+            >
+              work-depth model
+            </a>
+            of analysis provides a good
+            level of abstraction for thinking about the theoretical lower bound complexity of
+            algorithms not as the number of operations with respect to input size.
+          </p>
+          <p>
+            instead of thinking about the raw numbers of operations an algorithm performs, or
+            <strong>work</strong>,
+            it’s better to think about the
+            <strong>depth</strong>
+            of the computation graph with respect
+            to input size, or in other words, the minimum number of non-parallelizable
+            sequential operations. as these are irreducibly blocking, no matter how many cores you
+            have in your computer.
+          </p>
+
+          <p>
+            my expertise is mostly in performance engineering of ml systems, so the focus of
+            this article will mostly relate to algorithms that apply to tensors.
+          </p>
+          <p>
+            this model is not perfect, and i will detail why in a
+            <a href="#limitations" class="internal">later section</a>, but to
+            start off, the best question to ask is:
+          </p>
+
+          <blockquote>
+            <p>what is the time complexity of element wise multiplication?</p>
+          </blockquote>
+
+          <p>
+            from which we will eventually work up to my thesis, which is that
+            <strong>vanilla</strong>
+            attention as it is implemented in transformers, should be considered logarithmic
+            in computational complexity.
+          </p>
+
+          <hr />
+
+          <!-- CASE 1 -->
+          <h2 id="case-1-element-wise-multiplication">
+            case 1: element wise multiplication
+            <a
+              aria-hidden="true"
+              tabindex="-1"
+              href="#case-1-element-wise-multiplication"
+              class="internal"
+            >
+              §
+            </a>
+          </h2>
+
+          <p>
+            given a vector a and a vector b with the same number of elements.
+          </p>
+          <p>
+            element wise multiplication takes every element in a and multiplies it
+            with the matching index in b and stores it in a new vector c (or in place)
+          </p>
+          <p>the pseudo code will look like:</p>
+
+          <pre>
+<button
+  class="clipboard-button"
+  type="button"
+  aria-label="Copy source"
+>
+  <svg
+    aria-hidden="true"
+    height="16"
+    viewBox="0 0 16 16"
+    version="1.1"
+    width="16"
+    data-view-component="true"
+  >
+    <path
+      fill-rule="evenodd"
+      d="M0 6.75C0 5.784.784 5 1.75 
+         5h1.5a.75.75 0 010 
+         1.5h-1.5a.25.25 
+         0 00-.25.25v7.5c0 
+         .138.112.25.25.25h7.5a.25.25 
+         0 
+         00.25-.25v-1.5a.75.75 
+         0 
+         011.5 
+         0v1.5A1.75 
+         1.75 
+         0 
+         019.25 
+         16h-7.5A1.75 
+         1.75 
+         0 
+         010 
+         14.25v-7.5z"
+    ></path>
+    <path
+      fill-rule="evenodd"
+      d="M5 1.75C5 .784 
+         5.784 
+         0 
+         6.75 
+         0h7.5C15.216 
+         0 
+         16 .784 
+         16 
+         1.75v7.5A1.75 1.75 
+         0 
+         0114.25 
+         11h-7.5A1.75 
+         1.75 
+         0 
+         015 
+         9.25v-7.5zm1.75-.25a.25.25 
+         0 
+         00-.25.25v7.5c0 
+         .138.112.25.25.25h7.5a.25.25 
+         0 
+         00.25-.25v-7.5a.25.25 
+         0 
+         00-.25-.25h-7.5z"
+    ></path>
+  </svg>
+</button>
+<code>
+n   = &lt;big integer&gt;
+a,b = arange(n), arange(n)
+c   = zeros(n)
+for i in range(n):
+  c[i] = a[i] * b[i]
+</code>
+          </pre>
+
+          <p>
+            time complexity wise, this is obviously linear. and performed on a single thread,
+            this is true!
+          </p>
+          <p>
+            however if you take a closer look, you’ll realize that in the computation graph
+            of this problem, none of the steps in range(n) depend on one another. they’re
+            entirely independent.
+          </p>
+          <p>
+            so ... why not do them in parallel?
+          </p>
+          <p>
+            which is exactly what every linear algebra/tensor library does under the hood.
+          </p>
+          <p>
+            and you quickly find out that, the problem isn’t linear at all! it actually
+            looks like constant time until a mysterious cutoff point (that we will detail
+            later).
+          </p>
+          <p>
+            more concretely, we can analyze the work and depth of element wise
+            multiplication:
+          </p>
+
+          <pre>
+<button
+  class="clipboard-button"
+  type="button"
+  aria-label="Copy source"
+>
+  <svg
+    aria-hidden="true"
+    height="16"
+    viewBox="0 0 16 16"
+    version="1.1"
+    width="16"
+    data-view-component="true"
+  >
+    <path
+      fill-rule="evenodd"
+      d="M0 6.75C0 
+         5.784.784 5 
+         1.75 
+         5h1.5a.75.75 
+         0 010 
+         1.5h-1.5a.25.25 
+         0 
+         00-.25.25v7.5c0 
+         .138.112.25.25.25h7.5a.25.25 
+         0 
+         00.25-.25v-1.5a.75.75 
+         0 
+         011.5 
+         0v1.5A1.75 
+         1.75 
+         0 
+         019.25 
+         16h-7.5A1.75 
+         1.75 
+         0 
+         010 
+         14.25v-7.5z"
+    ></path>
+    <path
+      fill-rule="evenodd"
+      d="M5 
+         1.75C5 
+         .784 
+         5.784 
+         0 
+         6.75 
+         0h7.5C15.216 
+         0 
+         16 .784 
+         16 
+         1.75v7.5A1.75 1.75 
+         0 
+         0114.25 
+         11h-7.5A1.75 
+         1.75 
+         0 
+         015 
+         9.25v-7.5zm1.75-.25a.25.25 
+         0 
+         00-.25.25v7.5c0 
+         .138.112.25.25.25h7.5a.25.25 
+         0 
+         00.25-.25v-7.5a.25.25 
+         0 
+         00-.25-.25h-7.5z"
+    ></path>
+  </svg>
+</button>
+<code>
++-------+-------+-------------------+------+
+|   OP  | DEPTH |       INPUT       | WORK |
++-------+-------+-------------------+------+
+|       |       |                   |      |
+|  LOAD |   1   | [a_1 a_2 ... a_i] |  n   |
+|  LOAD |   1   | [b_1 b_2 ... b_i] |  n   |
+|  MUL  |   1   |    *  *      *    |  n   |
+| STORE |   1   | [c_1 c_2 ... c_i] |  n   |
+|       |       |                   |      |
++-------+-------+-------------------+------+
+| TOTAL |   4   |                   |  4n  |
+|       |       |                   |      |
+| ASYMP |  O(1) |                   | O(n) |
++-------+-------+-------------------+------+
+</code>
+          </pre>
+
+          <p>
+            every operation required in the algorithm: load, mul, store, all have
+            constant depth, and given enough parallel compute (up to the magical cutoff
+            point mentioned above), all of them can effectively be done in constant time.
+          </p>
+
+          <hr />
+
+          <!-- CASE 2 -->
+          <h2 id="case-2-vector-summation-aka-contraction">
+            case 2: vector summation (aka contraction)
+            <a
+              aria-hidden="true"
+              tabindex="-1"
+              href="#case-2-vector-summation-aka-contraction"
+              class="internal"
+            >
+              §
+            </a>
+          </h2>
+          <p>
+            summation (henceforth referred to as CONTRACT)
+          </p>
+          <p>
+            is a bit more complicated than elementwise operations. here, we clearly
+            see that there is a dependency between two steps (since accumulation requires calling
+            into c’s state). and this cannot be done emberassingly in parallel.
+          </p>
+
+          <pre>
+<button class="clipboard-button" type="button" aria-label="Copy source">
+  <svg
+    aria-hidden="true"
+    height="16"
+    viewBox="0 0 16 16"
+    version="1.1"
+    width="16"
+    data-view-component="true"
+  >
+    <path
+      fill-rule="evenodd"
+      d="M0 
+         6.75C0 
+         5.784.784 
+         5 
+         1.75 
+         5h1.5a.75.75 0 
+         010 
+         1.5h-1.5a.25.25 
+         0 
+         00-.25.25v7.5c0 
+         .138.112.25.25.25h7.5a.25.25 
+         0 
+         00.25-.25v-1.5a.75.75 
+         0 
+         011.5 
+         0v1.5A1.75 
+         1.75 
+         0 
+         019.25 
+         16h-7.5A1.75 
+         1.75 
+         0 
+         010 
+         14.25v-7.5z"
+    ></path>
+    <path
+      fill-rule="evenodd"
+      d="M5 
+         1.75C5 
+         .784 
+         5.784 0 
+         6.75 
+         0h7.5C15.216 
+         0 
+         16 .784 
+         16 
+         1.75v7.5A1.75 1.75 
+         0 
+         0114.25 
+         11h-7.5A1.75 1.75 
+         0 
+         015 
+         9.25v-7.5zm1.75-.25a.25.25 
+         0 
+         00-.25.25v7.5c0 
+         .138.112.25.25.25h7.5a.25.25 
+         0 
+         00.25-.25v-7.5a.25.25 
+         0 
+         00-.25-.25h-7.5z"
+    ></path>
+  </svg>
+</button>
+<code>
+n = &lt;big integer&gt;
+a = arange(n)
+c = 0
+for i in range(n):
+  c += a[i]
+</code>
+          </pre>
+
+          <p>
+            fortunately though, if you look a bit closer, you’ll realize that this is only
+            a dependency between every <em>two</em> steps, or pairs.
+          </p>
+          <p>
+            it is in fact still possible to parallelize this operation, by instead of doing
+            every elementwise operation in parallel in one step, doing every <strong>pairwise</strong>
+            operation in one step.
+          </p>
+          <p>
+            for a list of length n, the progression is as follows:
+          </p>
+
+          <ol>
+            <li>
+              <p>
+                sum up every adjacent even and odd pair of numbers in the list (there are
+                n/2 of such pairs), and store them into either the even or odd index of the pair.
+              </p>
+            </li>
+            <li>
+              <p>
+                sum up every adjacent <strong>summed pair</strong>, and do the same index trick (there are
+                n/4 of such pairs of pairs)
+              </p>
+            </li>
+            <li>
+              <p>pairs of pairs of ... pairs</p>
+            </li>
+            <li>
+              <p>
+                after log_2(n) steps, you’ll have a single number that is the sum every element
+                in the list.
+              </p>
+            </li>
+          </ol>
+
+          <pre>
+<button class="clipboard-button" type="button" aria-label="Copy source">
+  <svg
+    aria-hidden="true"
+    height="16"
+    viewBox="0 0 16 16"
+    version="1.1"
+    width="16"
+    data-view-component="true"
+  >
+    <path
+      fill-rule="evenodd"
+      d="M0 
+         6.75C0 
+         5.784.784 
+         5 
+         1.75 
+         5h1.5a.75.75 
+         0 
+         010 
+         1.5h-1.5a.25.25 
+         0 
+         00-.25.25v7.5c0 
+         .138.112.25.25.25h7.5a.25.25 
+         0 
+         00.25-.25v-1.5a.75.75 
+         0 
+         011.5 0v1.5A1.75 
+         1.75 
+         0 
+         019.25 
+         16h-7.5A1.75 
+         1.75 
+         0 
+         010 
+         14.25v-7.5z"
+    ></path>
+    <path
+      fill-rule="evenodd"
+      d="M5 
+         1.75C5 
+         .784 
+         5.784 
+         0 
+         6.75 
+         0h7.5C15.216 
+         0 
+         16 .784 
+         16 
+         1.75v7.5A1.75 1.75 
+         0 
+         0114.25 
+         11h-7.5A1.75 1.75 
+         0 
+         015 
+         9.25v-7.5zm1.75-.25a.25.25 
+         0 
+         00-.25.25v7.5c0 
+         .138.112.25.25.25h7.5a.25.25 
+         0 
+         00.25-.25v-7.5a.25.25 
+         0 
+         00-.25-.25h-7.5z"
+    ></path>
+  </svg>
+</button>
+<code>
++------------+----------+---------------------------------------+------+
+|     OP     |  DEPTH   |                 INPUT                 | WORK |
++------------+----------+---------------------------------------+------+
+|            |          |                                       |      |
+|    LOAD    |    1     | [a_1     a_2     a_3     a_4  ⋯  a_i] | n/2  |
+|            |          |      \     /       \     /       /    |      |
+| PAIRWISE + |    1     |     [a_1+a_2         a_3+a_4   ⋯  ]   | n/4  |
+|            |          |           \           /        /      |      |
+| PAIRWISE + |    1     |          [(a_1+a_2)+(a_3+a_4) ⋯ ]     | n/8  |
+|            |          |                    \   /              |      |
+|     ⋯      |    ⋯     |                      ⋯                |  ⋯   |
+|            |          |                      |                |      |
+| PAIRWISE + |    1     |                    [∑a]               |  1   |
+|   STORE    |    1     |                    [∑a]               |  1   |
+|            |          |                                       |      |
++------------+----------+---------------------------------------+------+
+|   TOTAL    | (logn)+1 |                                       | n+1  |
+|            |          |                                       |      |
+|   ASYMP    | O(log n) |                                       | O(n) |
++------------+----------+---------------------------------------+------+
+</code>
+          </pre>
+
+          <hr />
+
+          <!-- CASE 3 -->
+          <h2 id="case-3-tensor-product">
+            case 3: tensor product
+            <a
+              aria-hidden="true"
+              tabindex="-1"
+              href="#case-3-tensor-product"
+              class="internal"
+            >
+              §
+            </a>
+          </h2>
+
+          <pre>
+<button
+  class="clipboard-button"
+  type="button"
+  aria-label="Copy source"
+>
+  <svg
+    aria-hidden="true"
+    height="16"
+    viewBox="0 0 16 16"
+    version="1.1"
+    width="16"
+    data-view-component="true"
+  >
+    <path
+      fill-rule="evenodd"
+      d="M0 
+         6.75C0 
+         5.784.784 
+         5 
+         1.75 
+         5h1.5a.75.75 
+         0 
+         010 
+         1.5h-1.5a.25.25 
+         0 
+         00-.25.25v7.5c0 
+         .138.112.25.25.25h7.5a.25.25 
+         0 
+         00.25-.25v-1.5a.75.75 
+         0 
+         011.5 
+         0v1.5A1.75 
+         1.75 
+         0 
+         019.25 
+         16h-7.5A1.75 
+         1.75 
+         0 
+         010 
+         14.25v-7.5z"
+    ></path>
+    <path
+      fill-rule="evenodd"
+      d="M5 
+         1.75C5 
+         .784 
+         5.784 
+         0 
+         6.75 
+         0h7.5C15.216 
+         0 
+         16 
+         .784 
+         16 
+         1.75v7.5A1.75 1.75 
+         0 
+         0114.25 
+         11h-7.5A1.75 
+         1.75 
+         0 
+         015 
+         9.25v-7.5zm1.75-.25a.25.25 
+         0 
+         00-.25.25v7.5c0 
+         .138.112.25.25.25h7.5a.25.25 
+         0 
+         00.25-.25v-7.5a.25.25 
+         0 
+         00-.25-.25h-7.5z"
+    ></path>
+  </svg>
+</button>
+<code>
++-------+-------+-------------------------------+---------+
+|   OP  | DEPTH |             INPUT             |   WORK  |
++-------+-------+-------------------------------+---------+
+|       |       |                               |         |
+|  LOAD |   1   |   [a_11 a_12 ⋯ a_1j ⋯ a_ij]   |    n²   |
+|  LOAD |   1   |   [b_11 b_12 ⋯ b_1k ⋯ b_jk]   |    n²   |
+|  MUL  |   1   |       *   *     *     *       |    n³   |
+| STORE |   1   | [c_111 c_112 ⋯ c_1jk ⋯ c_ijk] |    n³   |
+|       |       |                               |         |
++-------+-------+-------------------------------+---------+
+| TOTAL |   4   |                               | 2n²+2n³ |
+|       |       |                               |         |
+| ASYMP |  O(1) |                               |  O(n³)  |
++-------+-------+-------------------------------+---------+
+</code>
+          </pre>
+
+          <p>
+            the
+            <a
+              href="https://en.wikipedia.org/wiki/Tensor_product"
+              class="external"
+            >
+              tensor product
+            </a>
+            (henceforth called TENSOR) is a fundamental operation on tensors.
+            basically, it takes all indeces of two tensors and does element wise
+            multiplication over all of the requested indeces, (some of which can
+            be shared).
+          </p>
+          <p>
+            in the case of the tensor product of two matrices with one shared axis,
+            this materializes a cubic tensor. but since the only operations required
+            are a parallel load, store and elementwise multiplication, this also
+            has constant depth.
+          </p>
+          <p>
+            caveat: it only has constant depth only if the materialized tensor (or
+            the materialized sections) fits neatly into cache). every time the
+            tensor doesn’t fit into cache, this becomes an irreducible depth and
+            the problem becomes at least sequential at that cache level.
+          </p>
+          <p>
+            the tensor product is not talked about very often in machine learning,
+            but it is a much more elegant way to think about most tensor operations
+            than the 20+ ways of thinking about tensors.
+          </p>
+          <p>
+            instead of having permute, sum, matmul, hadamard product, direct product,
+            every batched operation, etc etc. everything is just some variant of
+            tensor product -> some variant of contraction.
+          </p>
+
+          <hr />
+
+          <!-- CASE 4 -->
+          <h2 id="case-4-matrix-multiplication">
+            case 4: matrix multiplication
+            <a
+              aria-hidden="true"
+              tabindex="-1"
+              href="#case-4-matrix-multiplication"
+              class="internal"
+            >
+              §
+            </a>
+          </h2>
+          <p>
+            the
+            <a
+              href="https://en.wikipedia.org/wiki/Matrix_multiplication"
+              class="external"
+            >
+              matrix multiplication
+            </a>
+            (MATMUL), is one such tensor operation that is elegantly
+            described using the tensor product into a contraction.
+          </p>
+          <p>
+            given two tensors A,B of dimensionality (i j) and (j k), the tensor product
+            constructs a tensor C that has elements C[i,j,k] = A[i,j] * B[j,k], and then sums (contracts)
+            along the j dimension into a matrix D of shape (i k). (for efficiency, C is usually never fully
+            materialized, instead the contraction is fused between shards of the tensor product)
+          </p>
+          <p>
+            this can be trivially batched / broadcasted by simply ignoring the outer axes. in short,
+            the matmul is described as
+          </p>
+
+          <pre>
+<button class="clipboard-button" type="button" aria-label="Copy source">
+  <svg
+    aria-hidden="true"
+    height="16"
+    viewBox="0 0 16 16"
+    version="1.1"
+    width="16"
+    data-view-component="true"
+  >
+    <path
+      fill-rule="evenodd"
+      d="M0 
+         6.75C0 
+         5.784.784 
+         5 
+         1.75 
+         5h1.5a.75.75 
+         0 
+         010 
+         1.5h-1.5a.25.25 
+         0 
+         00-.25.25v7.5c0 
+         .138.112.25.25.25h7.5a.25.25 
+         0 
+         00.25-.25v-1.5a.75.75 
+         0 
+         011.5 
+         0v1.5A1.75 
+         1.75 
+         0 
+         019.25 
+         16h-7.5A1.75 
+         1.75 
+         0 
+         010 
+         14.25v-7.5z"
+    ></path>
+    <path
+      fill-rule="evenodd"
+      d="M5 
+         1.75C5 
+         .784 
+         5.784 
+         0 
+         6.75 
+         0h7.5C15.216 
+         0 
+         16 
+         .784 
+         16 
+         1.75v7.5A1.75 
+         1.75 
+         0 
+         0114.25 
+         11h-7.5A1.75 
+         1.75 
+         0 
+         015 
+         9.25v-7.5zm1.75-.25a.25.25 
+         0 
+         00-.25.25v7.5c0 
+         .138.112.25.25.25h7.5a.25.25 
+         0 
+         00.25-.25v-7.5a.25.25 
+         0 
+         00-.25-.25h-7.5z"
+    ></path>
+  </svg>
+</button>
+<code>
+einsum("...ij, ...jk -> ...ik", A, B)
+</code>
+          </pre>
+
+          <p>pseudocode for stuff under the hood:</p>
+
+          <pre>
+<button class="clipboard-button" type="button" aria-label="Copy source">
+  <svg
+    aria-hidden="true"
+    height="16"
+    viewBox="0 0 16 16"
+    version="1.1"
+    width="16"
+    data-view-component="true"
+  >
+    <path
+      fill-rule="evenodd"
+      d="M0 
+         6.75C0 
+         5.784.784 
+         5 
+         1.75 
+         5h1.5a.75.75 
+         0 
+         010 
+         1.5h-1.5a.25.25 
+         0 
+         00-.25.25v7.5c0 
+         .138.112.25.25.25h7.5a.25.25 
+         0 
+         00.25-.25v-1.5a.75.75 
+         0 
+         011.5 
+         0v1.5A1.75 
+         1.75 
+         0 
+         019.25 
+         16h-7.5A1.75 
+         1.75 
+         0 
+         010 
+         14.25v-7.5z"
+    ></path>
+    <path
+      fill-rule="evenodd"
+      d="M5 
+         1.75C5 .784 
+         5.784 
+         0 
+         6.75 
+         0h7.5C15.216 
+         0 
+         16 
+         .784 
+         16 
+         1.75v7.5A1.75 1.75 
+         0 
+         0114.25 
+         11h-7.5A1.75 1.75 
+         0 
+         015 
+         9.25v-7.5zm1.75-.25a.25.25 
+         0 
+         00-.25.25v7.5c0 
+         .138.112.25.25.25h7.5a.25.25 
+         0 
+         00.25-.25v-7.5a.25.25 
+         0 
+         00-.25-.25h-7.5z"
+    ></path>
+  </svg>
+</button>
+<code>
+A = some matrix of shape (i j)
+B = some matrix of shape (j k)
+C = zeros of shape (i j k)
+
+for _i in range i:
+  for _j in range j:
+    for _k in range k:
+      C[_i,_j,_k] = A[_i,_j] * B[_j,_k] # element wise multiply
+
+
+D = zeros of shape (i k)
+
+for _i in range i:
+  for _j in range j:
+    for _k in range k:
+      D[_i,_k] += C[_i,_j,_k]           # contraction
+</code>
+          </pre>
+
+          <p>
+            note that this is just a sequential composition of TENSOR into CONTRACT, which have
+            depth complexity O(1) and O(logn) respectively:
+          </p>
+
+          <pre>
+<button class="clipboard-button" type="button" aria-label="Copy source">
+  <svg
+    aria-hidden="true"
+    height="16"
+    viewBox="0 0 16 16"
+    version="1.1"
+    width="16"
+    data-view-component="true"
+  >
+    <path
+      fill-rule="evenodd"
+      d="M0 
+         6.75C0 
+         5.784.784 
+         5 
+         1.75 
+         5h1.5a.75.75 
+         0 
+         010 
+         1.5h-1.5a.25.25 
+         0 
+         00-.25.25v7.5c0 
+         .138.112.25.25.25h7.5a.25.25 
+         0 
+         00.25-.25v-1.5a.75.75 
+         0 
+         011.5 
+         0v1.5A1.75 
+         1.75 
+         0 
+         019.25 
+         16h-7.5A1.75 
+         1.75 
+         0 
+         010 
+         14.25v-7.5z"
+    ></path>
+    <path
+      fill-rule="evenodd"
+      d="M5 
+         1.75C5 
+         .784 
+         5.784 
+         0 
+         6.75 
+         0h7.5C15.216 
+         0 
+         16 
+         .784 
+         16 
+         1.75v7.5A1.75 1.75 
+         0 
+         0114.25 
+         11h-7.5A1.75 1.75 
+         0 
+         015 
+         9.25v-7.5zm1.75-.25a.25.25 
+         0 
+         00-.25.25v7.5c0 
+         .138.112.25.25.25h7.5a.25.25 
+         0 
+         00.25-.25v-7.5a.25.25 
+         0 
+         00-.25-.25h-7.5z"
+    ></path>
+  </svg>
+</button>
+<code>
++----------+----------+---------------------------+---------+
+|    OP    |  DEPTH   |           INPUT           |   WORK  |
++----------+----------+---------------------------+---------+
+|          |          |                           |         |
+|   LOAD   |    1     | [a_11 a_12 ⋯ a_1j ⋯ a_ij] |    n²   |
+|   LOAD   |    1     | [b_11 b_12 ⋯ b_1k ⋯ b_jk] |    n²   |
+|  TENSOR  |    1     |        "ij,jk->ijk"       |    n³   |
+| CONTRACT |  log n   |         "ijk->ik"         |    n³   |
+|  STORE   |    1     | [d_11 d_12 ⋯ d_1k ⋯ d_ik] |    n²   |
+|          |          |                           |         |
++----------+----------+---------------------------+---------+
+|  TOTAL   | (logn)+4 |                           | 2n²+2n³ |
+|          |          |                           |         |
+|  ASYMP   | O(log n) |                           |  O(n³)  |
++----------+----------+---------------------------+---------+
+</code>
+          </pre>
+
+          <hr />
+
+          <!-- CASE 5 -->
+          <h2 id="case-5-softmax">
+            case 5: softmax
+            <a
+              aria-hidden="true"
+              tabindex="-1"
+              href="#case-5-softmax"
+              class="internal"
+            >
+              §
+            </a>
+          </h2>
+          <p>
+            softmax is not at all special. elementwise application of e^x,
+            followed by a contraction, followed by a element wise division.
+          </p>
+          <p>
+            here’s the depth complexity analysis as usual:
+          </p>
+
+          <pre>
+<button class="clipboard-button" type="button" aria-label="Copy source">
+  <svg
+    aria-hidden="true"
+    height="16"
+    viewBox="0 0 16 16"
+    version="1.1"
+    width="16"
+    data-view-component="true"
+  >
+    <path
+      fill-rule="evenodd"
+      d="M0 
+         6.75C0 
+         5.784.784 
+         5 
+         1.75 
+         5h1.5a.75.75 
+         0 
+         010 
+         1.5h-1.5a.25.25 
+         0 
+         00-.25.25v7.5c0 
+         .138.112.25.25.25h7.5a.25.25 
+         0 
+         00.25-.25v-1.5a.75.75 
+         0 
+         011.5 0v1.5A1.75 
+         1.75 
+         0 
+         019.25 
+         16h-7.5A1.75 
+         1.75 
+         0 
+         010 
+         14.25v-7.5z"
+    ></path>
+    <path
+      fill-rule="evenodd"
+      d="M5 
+         1.75C5 
+         .784 
+         5.784 
+         0 
+         6.75 
+         0h7.5C15.216 
+         0 
+         16 
+         .784 
+         16 
+         1.75v7.5A1.75 1.75 
+         0 
+         0114.25 
+         11h-7.5A1.75 
+         1.75 
+         0 
+         015 
+         9.25v-7.5zm1.75-.25a.25.25 
+         0 
+         00-.25.25v7.5c0 
+         .138.112.25.25.25h7.5a.25.25 
+         0 
+         00.25-.25v-7.5a.25.25 
+         0 
+         00-.25-.25h-7.5z"
+    ></path>
+  </svg>
+</button>
+<code>
++-------+----------+-------------+------+
+|   OP  |  DEPTH   |    INPUT    | WORK |
++-------+----------+-------------+------+
+|       |          |             |      |
+|  LOAD |    1     |    x ∈ ℝⁿ   |  n   |
+|  MAX  |  log n   |  m = max(x) |  n   |
+|  SUB  |    1     |  x' = x - m |  n   |
+|  EXP  |    1     | e = exp(x') |  n   |
+|  SUM  |  log n   |  s = sum(e) |  n   |
+|  DIV  |    1     |  y = e / s  |  n   |
+| STORE |    1     |    y ∈ ℝⁿ   |  n   |
+|       |          |             |      |
++-------+----------+-------------+------+
+| TOTAL | 2log n+5 |             |  7n  |
+|       |          |             |      |
+| ASYMP | O(log n) |             | O(n) |
++-------+----------+-------------+------+
+</code>
+          </pre>
+
+          <hr />
+
+          <!-- CASE 6 -->
+          <h2 id="case-6-attention">
+            case 6: attention
+            <a
+              aria-hidden="true"
+              tabindex="-1"
+              href="#case-6-attention"
+              class="internal"
+            >
+              §
+            </a>
+          </h2>
+
+          <p>
+            and without further ado, attention. at this point we’re probably already used
+            to the composition. here’s the depth analysis:
+          </p>
+
+          <pre>
+<button class="clipboard-button" type="button" aria-label="Copy source">
+  <svg
+    aria-hidden="true"
+    height="16"
+    viewBox="0 0 16 16"
+    version="1.1"
+    width="16"
+    data-view-component="true"
+  >
+    <path
+      fill-rule="evenodd"
+      d="M0 
+         6.75C0 
+         5.784.784 
+         5 
+         1.75 
+         5h1.5a.75.75 
+         0 
+         010 
+         1.5h-1.5a.25.25 
+         0 
+         00-.25.25v7.5c0 
+         .138.112.25.25.25h7.5a.25.25 
+         0 
+         00.25-.25v-1.5a.75.75 
+         0 
+         011.5 
+         0v1.5A1.75 
+         1.75 
+         0 
+         019.25 
+         16h-7.5A1.75 
+         1.75 
+         0 
+         010 
+         14.25v-7.5z"
+    ></path>
+    <path
+      fill-rule="evenodd"
+      d="M5 
+         1.75C5 
+         .784 
+         5.784 
+         0 
+         6.75 
+         0h7.5C15.216 
+         0 
+         16 
+         .784 
+         16 
+         1.75v7.5A1.75 1.75 
+         0 
+         0114.25 
+         11h-7.5A1.75 
+         1.75 
+         0 
+         015 
+         9.25v-7.5zm1.75-.25a.25.25 
+         0 
+         00-.25.25v7.5c0 
+         .138.112.25.25.25h7.5a.25.25 
+         0 
+         00.25-.25v-7.5a.25.25 
+         0 
+         00-.25-.25h-7.5z"
+    ></path>
+  </svg>
+</button>
+<code>
++---------+------------+--------------------------------+---------+
+|    OP   |   DEPTH    |             INPUT              |   WORK  |
++---------+------------+--------------------------------+---------+
+|   LOAD  |     1      |           X ∈ ℝᵇˣⁿˣᵈ           |   bnd   |
+|   LOAD  |     1      |        Wq,Wk,Wv ∈ ℝᵈˣᵈ         |   3d²   |
+|  MATMUL |   3log d   | Q = X·Wq ; K = X·Wk ; V = X·Wv |  3bnd²  |
+|  MATMUL |   log d    |            S = Q·Kᵀ            | bn²d    |
+|   DIV   |     1      |          S' = S / √d           | bn²     |
+| SOFTMAX |   log n    |        A = softmax(S')         | bn²     |
+|  MATMUL |   log n    |            O = A·V             | bn²d    |
+|  STORE  |     1      |           O ∈ ℝᵇˣⁿˣᵈ           | bnd     |
+|         |            |                                |         |
++---------+------------+--------------------------------+---------+
+|  TOTAL  |  4log d +  |                                |  ≈ bn²d |
+|         | 2log n + 5 |                                |         |
+|         |            |                                |         |
+|  ASYMP  |  O(logn +  |                                | O(bn²d) |
+|         |    logd)   |                                |         |
++---------+------------+--------------------------------+---------+
+</code>
+          </pre>
+
+          <p>
+            as we can see, through the sequential composition of an integer number of matmuls
+            contractions, and a bunch of elementwise unary ops, attention has asymptotic
+            depth complexity of just O(logn + logd), where n and d are sequence length
+            and embedding dim respectively.
+          </p>
+          <p>
+            in practice, this usually means O(log sequence_length), since sequence_length is
+            usually far greater than embedding_dim.
+          </p>
+
+          <h2 id="limitations">
+            limitations
+            <a
+              aria-hidden="true"
+              tabindex="-1"
+              href="#limitations"
+              class="internal"
+            >
+              §
+            </a>
+          </h2>
+          <p>
+            however, depth analysis isn’t perfect, and the problem becomes immediately
+            apparent when taking into account memory access patterns and cache friendliness.
+          </p>
+          <p>in particular, this model fails when:</p>
+          <ul>
+            <li>max width of tree &gt;&gt; computation units (whatever cores are).</li>
+            <li>memory access patterns are not contiguous / vectorizable?</li>
+            <li>materialized variables don’t play nice with memory hierarchy.</li>
+          </ul>
+          <p>
+            in practice, this mostly means that the size of your materialized tensors must
+            stay within L2-ish cache for the depth complexity bounds to hold. nice memory
+            patterns usually come for free for (dense) tensors.
+          </p>
+
+          <h2 id="so-why-isnt-attention-logarithmic">
+            so why isn’t attention logarithmic?
+            <a
+              aria-hidden="true"
+              tabindex="-1"
+              href="#so-why-isnt-attention-logarithmic"
+              class="internal"
+            >
+              §
+            </a>
+          </h2>
+          <p>
+            the truth is, since attention requires at least partially materializing QK^T (which
+            is usually (very big integer, very big integer)) this will almost certainly overfill
+            your L2 cache (which either forces you to do compute in memory an OOM slower, or,
+            forces you to turn it into a sequential problem by
+            <strong>sharding the QK^T matrix into partially associative chunks to pass into softmax</strong>
+            <sup>
+              <a
+                href="#user-content-fn-1"
+                id="user-content-fnref-1"
+                data-footnote-ref
+                aria-describedby="footnote-label"
+                class="internal"
+              >
+                1
+              </a>
+            </sup>
+            ).
+          </p>
+          <p>
+            which means that for regular computers, the depth complexity for attention is more
+            something like O(n log n). though this in no way is an irreducible problem, for which
+            i have some speculative solutions in the next section.
+          </p>
+
+          <h2 id="speculations-on-future-compute">
+            speculations on future compute?
+            <a
+              aria-hidden="true"
+              tabindex="-1"
+              href="#speculations-on-future-compute"
+              class="internal"
+            >
+              §
+            </a>
+          </h2>
+          <p>
+            so, what does this mean for current chips and future chips?
+          </p>
+          <p>
+            i think it means quite a lot, assuming one key fact,
+            <strong>
+              that training paradigms remain largely non-concurrent
+            </strong>
+            (i.e looks like forward -&gt; backward passes on a loop,
+            or some mix like
+            <a href="https://github.com/deepseek-ai/DualPipe" class="external">
+              dualpipe
+            </a>
+            )
+          </p>
+          <p>
+            why? because if this is the case, then the weights of the neural net
+            (what makes up the majority of the volume of movement ops in a nn pass)
+            are largely static, and can have increasing amounts of locality to compute units.
+          </p>
+          <p>
+            we already see this happening. weights used to be offloaded to disk, or saved to ram,
+            and only launched to the gpu for specialized kernels.
+          </p>
+          <p>
+            then everyone and their grandma started training fully on device memory (VRAM or HBM).
+          </p>
+          <p>
+            and now chip manufacturers have caught on, and realized that they can get another OOM
+            (by effectively chopping off whole sections where the depth complexity analysis fails)
+            by moving weights onto even faster memory, like L2. (<strong>cough</strong>, gr*q).
+          </p>
+
+          <hr />
+
+          <pre>
+<button class="clipboard-button" type="button" aria-label="Copy source">
+  <svg
+    aria-hidden="true"
+    height="16"
+    viewBox="0 0 16 16"
+    version="1.1"
+    width="16"
+    data-view-component="true"
+  >
+    <path
+      fill-rule="evenodd"
+      d="M0 
+         6.75C0 
+         5.784.784 
+         5 
+         1.75 
+         5h1.5a.75.75 
+         0 
+         010 
+         1.5h-1.5a.25.25 
+         0 
+         00-.25.25v7.5c0 
+         .138.112.25.25.25h7.5a.25.25 
+         0 
+         00.25-.25v-1.5a.75.75 
+         0 
+         011.5 
+         0v1.5A1.75 
+         1.75 
+         0 
+         019.25 
+         16h-7.5A1.75 
+         1.75 
+         0 
+         010 
+         14.25v-7.5z"
+    ></path>
+    <path
+      fill-rule="evenodd"
+      d="M5 
+         1.75C5 
+         .784 
+         5.784 
+         0 
+         6.75 
+         0h7.5C15.216 
+         0 
+         16 
+         .784 
+         16 
+         1.75v7.5A1.75 
+         1.75 
+         0 
+         0114.25 
+         11h-7.5A1.75 
+         1.75 
+         0 
+         015 
+         9.25v-7.5zm1.75-.25a.25.25 
+         0 
+         00-.25.25v7.5c0 
+         .138.112.25.25.25h7.5a.25.25 
+         0 
+         00.25-.25v-7.5a.25.25 
+         0 
+         00-.25-.25h-7.5z"
+    ></path>
+  </svg>
+</button>
+<code>
+@misc{doan2025attnislogarithmic,
+  title = {Attention is logarithmic, actually},
+  url = {https://supaiku.com/attention-is-logarithmic},
+  year = {2025}
+}
+</code>
+          </pre>
+
+          <section data-footnotes class="footnotes">
+            <h2 class="sr-only" id="footnote-label">
+              Footnotes
+              <a aria-hidden="true" tabindex="-1" href="#footnote-label" class="internal">
+                §
+              </a>
+            </h2>
+            <ol>
+              <li id="user-content-fn-1">
+                <p>
+                  this is my reductionist take for what flash attention is.
+                  <a
+                    href="#user-content-fnref-1"
+                    data-footnote-backref
+                    class="data-footnote-backref internal"
+                    aria-label="Back to content"
+                  >
+                    ↩
+                  </a>
+                </p>
+              </li>
+            </ol>
+          </section>
+        </article>
+      </div>
+
+      <!-- Right sidebar -->
+      <div class="right sidebar"></div>
+    </div>
+
+    <!-- Dark mode toggle container -->
+    <div class="darkmode" style="display:none;">
+      <input class="toggle" id="darkmode-toggle" type="checkbox" tabindex="-1" />
+    </div>
+  </div>
+
+  <!-- The callout script -->
+  <script type="application/javascript">
+    // quartz/components/scripts/quartz/components/scripts/callout.inline.ts
+    function toggleCallout() {
+      const outerBlock = this.parentElement;
+      outerBlock.classList.toggle(`is-collapsed`);
+      const collapsed = outerBlock.classList.contains(`is-collapsed`);
+      const height = collapsed ? this.scrollHeight : outerBlock.scrollHeight;
+      outerBlock.style.maxHeight = height + `px`;
+      let current = outerBlock;
+      let parent = outerBlock.parentElement;
+      while (parent) {
+        if (!parent.classList.contains(`callout`)) {
+          return;
+        }
+        const collapsed2 = parent.classList.contains(`is-collapsed`);
+        const height2 = collapsed2
+          ? parent.scrollHeight
+          : parent.scrollHeight + current.scrollHeight;
+        parent.style.maxHeight = height2 + `px`;
+        current = parent;
+        parent = parent.parentElement;
+      }
+    }
+
+    function setupCallout() {
+      const collapsible = document.getElementsByClassName(`callout is-collapsible`);
+      for (const div of collapsible) {
+        const title = div.firstElementChild;
+        if (title) {
+          title.removeEventListener(`click`, toggleCallout);
+          title.addEventListener(`click`, toggleCallout);
+          const collapsed = div.classList.contains(`is-collapsed`);
+          const height = collapsed ? title.scrollHeight : div.scrollHeight;
+          div.style.maxHeight = height + `px`;
+        }
+      }
+    }
+
+    document.addEventListener(`nav`, setupCallout);
+    window.addEventListener(`resize`, setupCallout);
+  </script>
+
+  <!-- Mermaid script (if you want diagrams) -->
+  <script type="module">
+    import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.esm.min.mjs';
+    const darkMode = document.documentElement.getAttribute('saved-theme') === 'dark';
+    mermaid.initialize({
+      startOnLoad: false,
+      securityLevel: 'loose',
+      theme: darkMode ? 'dark' : 'default'
+    });
+    document.addEventListener('nav', async () => {
+      await mermaid.run({
+        querySelector: '.mermaid'
+      });
+    });
+  </script>
+
+  <!-- KaTeX copy-tex plugin, if needed -->
+  <script
+    src="https://cdn.jsdelivr.net/npm/katex@0.16.7/dist/contrib/copy-tex.min.js"
+    type="application/javascript"
+  ></script>
+
+  <!-- postscript.js if you have one -->
+  <script src="./postscript.js" type="module"></script>
+
+  <!-- The route announcer (useful if it’s a single-page app) -->
+  <route-announcer
+    aria-live="assertive"
+    aria-atomic="true"
+    style="
+      position: absolute;
+      left: 0;
+      top: 0;
+      clip: rect(0 0 0 0);
+      clip-path: inset(50%);
+      overflow: hidden;
+      white-space: nowrap;
+      width: 1px;
+      height: 1px;
+    "
+  >
+    attention is logarithmic, actually
+  </route-announcer>
+</body>
+</html>
