@@ -5,7 +5,7 @@ slug: "attention-is-logarithmic"
 date: 2025-03-25
 ---
 
-# attention is logarithmic, actually
+# attention is logarithmic, actually (NOTE: This is from supaiku.com -- please go there! It's not my content, just a placeholder because his website and formatting for code and such looked so good that I had to steal it.)
 
 > time complexity is a very bad model when working with parallelism.  
 > in which i make the case for [work-depth](https://en.wikipedia.org/wiki/Analysis_of_parallel_algorithms)  

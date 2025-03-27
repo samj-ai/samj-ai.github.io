@@ -2,6 +2,8 @@ title: "My Minimal Jekyll Blog"
 
 # No gem-based theme:
 theme: null
+# don't skip posts that have future dates
+future: true
 
 exclude:
   - "Gemfile"

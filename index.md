@@ -18,6 +18,10 @@ or email me at sambuckjohnson at gmail dot com.
   [attention is logarithmic]({{ "/2025/03/25/attention-is-logarithmic.html" | relative_url }})
 - 2025-03-26 ::
 [placeholder]({{ "/2025/03/20/placeholder.html" | relative_url }})
+- 2025-03-26 ::
+[ARC-AGI]({{ "/2025/03/26/ARC-AGI.html" | relative_url }})
+- 2025-03-27 ::
+[infinite-games]({{ "/2025/03/27/infinite-games.html" | relative_url }})
 
 ## links
 [github](https://github.com/samj-ai) ::
