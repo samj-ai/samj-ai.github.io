@@ -14,7 +14,7 @@ date: 2025-03-27
 
 **Outline**
 - Introduction and heuristics
-- Entropy
+- Entropy: what Claude Shannon did and did not do; extension to open-ended case.
 
 
 ## Introduction
@@ -34,6 +34,46 @@ To begin, I will sketch some intuitive characteristics of consciousness, viewed 
   - So far, this process describes the qualia of open-ended awareness, such as e.g., paying attention to wildlife: there is a sense in which their, once attention is glued to them, they in fact control your mind, because their own actions do not merely send your brain raw data, but rather now send data that is parsed through actively engaged simulators; we see them through our errors and the subprocesses those errors spawn. Those things that cannot be classified or delegated to any automatic subprocess simply exist as the shimmering edge of reality they have exposed us to in our naked awareness of novelty. This is a recurrent processing model in which I have framed Deleuze's account of difference. That is, consciousness exits to provide a medium which in principle allows one to compare not against all established variations in the world, but rather (simply, modestly) all internal variations unknown by the "thinker's" mind yet encodable and simulatable via automatic processes that exist in the thinker's brain. That which cannot be automatic focuses us directly on the world as distilled into it, and thereby at least permits the formation of new simulations, although how this happens is, at least for now, impossible to say in detail: by necessity, it is a "passive synthesis," with the emphasis on passive.
 
 DRAFT: From an intuitive point of view, such an ability requires consciousness to concurrently form and match simulations of the recipient of its attention; that is, for process A to attend consciously to process B, A must open a channel of communication to a form of input from B whose raw data are observable but whose meaning is unkown. In order to process this data, A must already implicitly simulate B; that is, to the extent that A can parse B's data at all, A must *already* contain processes that can invert B's processessing and therefore must resemble it. However, in the case of interest, namely establishing novel contact, such preliminary observations will leave large stretches of B's data indecipherable. Thus, the simulations of the inverse data generating process must be refined, and it may be that more (modularly) independent simulations must be formed inside of A in order to most thoroughly decipher B's data. It can also happen that, while A initially allocates only a certain amount of computational resources to modeling B, the errors in such a process necessitate the allocation of new resources. 
+
+## 2. Entropy, Information, Mutual Information, Open-Ended Mutual Information
+
+Claude Shannon introduced entropy to characterize communication channels. His goal was to characterize the capacity of communication media, or channels of communication, in a way that would remain agnostic to the content of the messages transmitted. His focus was explicitly on the efficiency of transmission through a channel with fixed limits rather than the deeper problem of communication: how to understand the meaning of the message, once recieved. In keeping with his lucid presentation, he is upfront about the scope of his work:
+
+> The fundamental problem of communication is that of reproducing at one point either exactly or ap-
+proximately a message selected at another point. Frequently the messages have meaning; that is they refer
+to or are correlated according to some system with certain physical or conceptual entities. These semantic
+aspects of communication are irrelevant to the engineering problem. The significant aspect is that the actual
+message is one selected from a set of possible messages. The system must be designed to operate for each
+possible selection, not just the one which will actually be chosen since this is unknown at the time of design.
+
+Practical scenarios involve communicating messages between computers (that is, encoding data and programs such that a remote computer could run the program on the data and return its result), sending video footage to a television screen such that it will display properly on the hardware, and perhaps most prosaically, standard verbal communication between two humans who speak the same languge (e.g., a telegram or email).
+
+In all these cases, the problem of using a channel to communicate a message is trivial; any one of an infinite number of coding schemes would suffice. It is the engineering of efficient channel use that is non-trivial and that motivates Shannon's use of entropy.
+
+***The upshot*** is that Shannon considers communication between entities that can already communicate by some means, and indeed must do so in order to agree on a coding and ecoding scheme by which they will read from and write to the channel. A good coding scheme will allow them to communicate more quickly using the same channel. But to agree on a scheme, they must first communicate by some other means. It may be that a perspicacious child who wishes to send his neighbor naughty messges via Morse Code with a flashlight at his bedroom window ... will be sorely disappointed if his neighbor doesn't know Morse code, doesn't recognize it, and doesn't pick up on it.
+
+Thus the question: how to establish semantic communication given an open channel.
+
+It is convenient to use Shannon's terminology:
+
+<img 
+    src="/assets/images/shannon-comm.png" 
+    alt="Description" 
+    style="
+        width: 100%; 
+        max-width: 800px; 
+        height: auto; 
+        display: block; 
+        margin: 0 auto;
+    "
+/>
+
+Given ergodic distributions of a source, we can derive that the maximum bits per symbol that can be transmitted on a channel with fixed discrete alphabet is C/H :
+
+```math
+C = \lim_{T\rightarrow \infty} N(t) \\
+H = -\sum_{i=1}^N p_i log_2 p_i 
+```
 
 
 
