@@ -6,11 +6,16 @@ date: 2025-03-27
 
 # Infinite Games
 
-Communication is an infinite game.
+> Communication is an infinite game.
+>
+> Consciousness is a peculiar form of communication that is distinguished by its ability to mediate the establishment of communication between different computational processes that share resources but that otherwise may have significantly different internal structure.
 
-Consciousness is a peculiar form of communication that is distinguished by its ability to mediate the establishment of communication between different computational processes that share resources but that otherwise may have significantly different internal structure.
+> My goal is to mathematically describe this process of reciprocal, open-ended communication.
 
-My goal is to mathematically describe this process of reciprocal, open-ended communication.
+**Outline**
+- Introduction and heuristics
+- Entropy
+
 
 ## Introduction
 
@@ -24,7 +29,7 @@ To begin, I will sketch some intuitive characteristics of consciousness, viewed 
   - In order to communicate deliberately rather than merely be a machinic broadcaster of a signal, B must model itself. It must be able to decode it own output at least somewhat. Otherwise communication would be at best a shot in the dark. Before A and B have established communication, they must have methods for parsing and decoding their own outputs that are independent of one another. A (B) must model data_A (data_B) using resources that are unkown to B (A).
   - An implication: to parse `data_B`, A must model B: A must not only `model(data_B)` but also `model(self_B(data_B))` because B must already contain and run `self_B(data_B)` in order to communicate deliberately.
 - **Computational structure: Recursion**: there are functional limits to what A can known or actively model about itself; therefore it will have incomplete knowledge of the implementations of the subroutines that are invoked in modeling either itself or B.
- - These subroutines need not be and cannot in general be guaranteed to be strictly controlled by B, as this would require 1) a level of knowledge that is infeasible, and 2) a level of segreation of neuronal activity that is unrealistic. (When I am thinking about a spider, there is always a small chance that I will think about a birthday hat.) The upshot:
+  - These subroutines need not be and cannot in general be guaranteed to be strictly controlled by B, as this would require 1) a level of knowledge that is infeasible, and 2) a level of segreation of neuronal activity that is unrealistic. (When I am thinking about a spider, there is always a small chance that I will think about a birthday hat.) The upshot:
   - Subroutines can call other subroutines and also their own invokers. The process of running model(data_B) can recursively recruit an ensemble of subproutines that, in their attempts to implement parts of model(dataB), may find their own errors too large and therefore recruit an expanding ensemble.
   - So far, this process describes the qualia of open-ended awareness, such as e.g., paying attention to wildlife: there is a sense in which their, once attention is glued to them, they in fact control your mind, because their own actions do not merely send your brain raw data, but rather now send data that is parsed through actively engaged simulators; we see them through our errors and the subprocesses those errors spawn. Those things that cannot be classified or delegated to any automatic subprocess simply exist as the shimmering edge of reality they have exposed us to in our naked awareness of novelty. This is a recurrent processing model in which I have framed Deleuze's account of difference. That is, consciousness exits to provide a medium which in principle allows one to compare not against all established variations in the world, but rather (simply, modestly) all internal variations unknown by the "thinker's" mind yet encodable and simulatable via automatic processes that exist in the thinker's brain. That which cannot be automatic focuses us directly on the world as distilled into it, and thereby at least permits the formation of new simulations, although how this happens is, at least for now, impossible to say in detail: by necessity, it is a "passive synthesis," with the emphasis on passive.
 
@@ -46,7 +51,9 @@ Reading list:
 - Crooks Fluctuation Theorem
 - Jeremy England - Biology of Life
 - Design of an optimal probe
+- Theory of Usable Information Under Computational Constraints
 - Assembly Theory
+- "Prefrontal Working Memory and Hippocampal Epsiodic Memory: Unifying Memories Stored in Weights and Activation Slots."
 
 Further leads:
 - Activte Inference (Friston)
